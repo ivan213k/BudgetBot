@@ -2,7 +2,7 @@
 {
     public static class AppSettings
     {
-        public static string Url { get; set; } = "https://3887439b.ngrok.io";
+        public static string Url { get; set; } = "https://e873880a.ngrok.io";
 
         public static string Name { get; set; } = "Expense_RevenueTracker_bot";
 
