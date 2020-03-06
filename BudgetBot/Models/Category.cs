@@ -1,20 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-
-namespace BudgetBot.Models
+﻿namespace BudgetBot.Models
 {
     public class Category
     {
-        public Category(string name, bool isStandard, string imageUrl=null)
+        private Emoji emoji;
+        public Category(string name, bool isStandard, Emoji image=null)
         {
             Name = name;
-            ImageUrl = imageUrl;
+            emoji = image;
             IsStandardCategory = isStandard;
         }
-        public Category(long userId, string name, bool isStandard = false, string imageUrl = null)
-            :this(name,isStandard,imageUrl)
+        public Category(long userId, string name, bool isStandard = false, Emoji image = null)
+            :this(name,isStandard,image)
         {
             UserId = userId;
             IsStandardCategory = isStandard;
@@ -23,8 +19,15 @@ namespace BudgetBot.Models
 
         public string Name { get; set; }
 
-        public string ImageUrl { get; set; }
+        public bool IsStandardCategory { get; set; }
 
-        public bool IsStandardCategory { get; set; } 
+        public string GetImage()
+        {
+            if (emoji!=null)
+            {
+                return emoji.ToString();
+            }
+            return "";
+        }
     }
 }

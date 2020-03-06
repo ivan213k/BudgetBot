@@ -43,7 +43,7 @@ namespace BudgetBot.Models
             {
                 var row = new List<InlineKeyboardButton>();
                 var button = new InlineKeyboardButton();
-                button.Text = category.Name;
+                button.Text = category.GetImage()+ " " + category.Name;
                 button.CallbackData = category.Name;
                 row.Add(button);
                 buttons.Add(row);
@@ -61,7 +61,7 @@ namespace BudgetBot.Models
             {
                 var row = new List<InlineKeyboardButton>();
                 var button = new InlineKeyboardButton();
-                button.Text = category.Name;
+                button.Text = category.GetImage() + " " + category.Name;
                 button.CallbackData = category.Name;
                 row.Add(button);
                 buttons.Add(row);

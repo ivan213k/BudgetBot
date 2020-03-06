@@ -43,10 +43,10 @@ namespace BudgetBot.Models.Commands
             {
                 AddCategory(userId, update.Message.Text);
                 var revenueButton = new InlineKeyboardButton();
-                revenueButton.Text = "В доходи";
+                revenueButton.Text = new Emoji(0x1F4C8).ToString() + " В доходи";
                 revenueButton.CallbackData = "revenue";
                 var expenseButton = new InlineKeyboardButton();
-                expenseButton.Text = "До витрат";
+                expenseButton.Text = new Emoji(0x1F4C9).ToString() + " До витрат";
                 expenseButton.CallbackData = "expense";
                 var buttons = new List<InlineKeyboardButton>()
                 {
