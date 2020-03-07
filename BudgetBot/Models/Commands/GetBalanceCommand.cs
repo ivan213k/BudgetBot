@@ -12,18 +12,24 @@ namespace BudgetBot.Models.Commands
 
         public override async Task Execute(Update update, TelegramBotClient client)
         {
-            var userId = update.Message.From.Id;
+            var userId = GetUserId(update);
+            var chatId = GetChatId(update);
+
             var statisticManager = new StatisticsManager();
             var totalAmountOfExpenses = statisticManager.GetTotalAmountOfExpenses(userId);
             var TotalAmountOfRevenues = statisticManager.GetTotalAmountOfRevenues(userId);
-            var answer = $"Баланс: \n" +
-                $"Загальна сума витрат - {totalAmountOfExpenses}\n\n" +
-                $"Загальна сума доходів - {TotalAmountOfRevenues}\n" +
+
+            var chartEmoji = new Emoji(0x1F4CA);
+            var upChart = new Emoji(0x1F4C8);
+            var downChart = new Emoji(0x1F4C9);
+
+            var answer = $"{chartEmoji} Баланс: \n" +
+                $"Загальна сума доходів {upChart} - {TotalAmountOfRevenues}\n\n" +
+                $"Загальна сума витрат  {downChart} - {totalAmountOfExpenses}\n" +
                 $"------------------------------\n" +
                 $"Баланс\t\t {TotalAmountOfRevenues - totalAmountOfExpenses}";
-            
-       
-            await client.SendTextMessageAsync(update.Message.Chat.Id, answer);
+             
+            await client.SendTextMessageAsync(chatId, answer);
         }
     }
 }

@@ -3,7 +3,7 @@
     public static class AppSettings
     {
         //https://budgetbot2020.azurewebsites.net/
-        public static string Url { get; set; } = "https://037b5554.ngrok.io";
+        public static string Url { get; set; } = "https://ad01f0c8.ngrok.io";
 
         public static string Name { get; set; } = "Expense_RevenueTracker_bot";
 

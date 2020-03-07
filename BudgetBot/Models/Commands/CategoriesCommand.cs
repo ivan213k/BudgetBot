@@ -10,7 +10,7 @@ namespace BudgetBot.Models.Command
 
         public override async Task Execute(Update update, TelegramBotClient client)
         {
-            await Bot.SendExpenseCategories(update.Message,"Список категорій: ");  
+            await Bot.SendExpenseCategories(update.Message,"Список категорій: ");
         }
     }
 }

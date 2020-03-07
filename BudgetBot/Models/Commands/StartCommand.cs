@@ -11,6 +11,7 @@ namespace BudgetBot.Models.Commands
 
         public override async Task Execute(Update update, TelegramBotClient client)
         {
+            var chatId = GetChatId(update);
             var answer = "Вас вітає Budget_bot) \n" +
                 "Цей бот допоможе вам слідкувати за доходами та витратими. \n" +
                 "Що вміє цей бот: \n" +
@@ -18,7 +19,7 @@ namespace BudgetBot.Models.Commands
                 "-Вести облік витрат\n" +
                 "-Відображати статистику витрат, доходів та баланс\n" +
                 "Щоб почати роботу скористайтесь доступними командами.";
-            await client.SendTextMessageAsync(update.Message.Chat.Id,answer);
+            await client.SendTextMessageAsync(chatId, answer);
         }
     }
 }

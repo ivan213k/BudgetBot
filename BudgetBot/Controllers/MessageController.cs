@@ -35,8 +35,12 @@ namespace BudgetBot.Controllers
             if (update.Type == UpdateType.CallbackQuery)
             {
                 var userId = update.CallbackQuery.From.Id;
-                await commands.Where(r => r.Name == State.GetCurrentCommand(userId)).Single().
-                    Execute(update, client);
+                var command = commands.Where(r => r.Name == State.GetCurrentCommand(userId)).FirstOrDefault();
+                if (command!=null)
+                {
+                    await command.Execute(update,client);
+                }
+
             }
           
             return Ok();

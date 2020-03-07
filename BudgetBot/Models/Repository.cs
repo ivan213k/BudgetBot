@@ -42,5 +42,50 @@ namespace BudgetBot.Models
         {
             return RevenueCategories.Where(r => r.IsStandardCategory || r.UserId == userId).ToList();
         }
+
+        public static string GetExpenseCategoryEmoji(string categoryName)
+        {
+            var category = ExpenseCategories.Where(r => r.Name == categoryName).FirstOrDefault();
+            if (category == null)
+            {
+                return "";
+            }
+            return category.GetImage();
+        }
+        public static string GetRevenueCategoryEmoji(string categoryName)
+        {
+            var category = RevenueCategories.Where(r => r.Name == categoryName).FirstOrDefault();
+            if (category == null)
+            {
+                return "";
+            }
+            return category.GetImage();
+        }
+
+        public static bool ContainsExpenseCategory(long userId, string categoryName)
+        {
+            var userCategories = GetExpenseCategories(userId);
+            foreach (var category in userCategories)
+            {
+                if (category.Name.ToLower()== categoryName.ToLower())
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public static bool ContainsRevenueCategory(long userId, string categoryName)
+        {
+            var userCategories = GetRevenueCategories(userId);
+            foreach (var category in userCategories)
+            {
+                if (category.Name.ToLower() == categoryName.ToLower())
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
     }
 }

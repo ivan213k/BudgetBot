@@ -41,6 +41,7 @@ namespace BudgetBot.Models.Command
         public override async Task Execute(Update update, TelegramBotClient client)
         {
             var userId = GetUserId(update);
+            var chatId = GetChatId(update);
             InitCommandSteps(userId);
             if (GetCurrentStep(userId) == 0)
             {
@@ -52,7 +53,7 @@ namespace BudgetBot.Models.Command
             if (GetCurrentStep(userId) == 1)
             {
                 AddExpense(userId, category: update.CallbackQuery.Data);
-                await client.SendTextMessageAsync(update.CallbackQuery.Message.Chat.Id, "Введіть суму витрати");
+                await client.SendTextMessageAsync(chatId,"Введіть суму витрати");
                 NextStep(userId);
                 return;
             }
@@ -60,13 +61,14 @@ namespace BudgetBot.Models.Command
             {
                 if (!decimal.TryParse(update.Message.Text,out decimal amount))
                 {
-                    await client.SendTextMessageAsync(update.Message.Chat.Id, "Упс..., введіть суму витрати");
+                    await client.SendTextMessageAsync(chatId, "Упс..., введіть суму витрати");
                     return;
                 }
                 AddExpense(userId, amount: amount, date: DateTime.Now);
 
                 var expense = userExpenses.Where(r => r.UserId == userId).Single();
-                await client.SendTextMessageAsync(update.Message.Chat.Id, $"Витрату додано:\n" +
+                var successEmoji = new Emoji(0x2705);
+                await client.SendTextMessageAsync(chatId, successEmoji + $" Витрату додано:\n" +
                     $"Категорія - {expense.Category}\n" +
                     $"Сума - {expense.Amount}$\n" +
                     $"Дата - {expense.Date.ToShortDateString()}");
@@ -75,7 +77,6 @@ namespace BudgetBot.Models.Command
                 State.FinishCurrentCommand(userId);
                 ResetCommandSteps(userId);
             }
-
         }
     }
 }

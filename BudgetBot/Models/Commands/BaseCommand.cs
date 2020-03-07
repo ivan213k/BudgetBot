@@ -39,10 +39,16 @@ namespace BudgetBot.Models.Command
             {
                 return update.Message.From.Id;
             }
-            else
+            return update.CallbackQuery.From.Id;
+        }
+
+        protected long GetChatId(Update update)
+        {
+            if (update.Message!=null)
             {
-                return update.CallbackQuery.From.Id;
+                return update.Message.Chat.Id;
             }
+            return update.CallbackQuery.Message.Chat.Id;
         }
     }
 }

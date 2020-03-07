@@ -21,6 +21,7 @@
 
         public bool IsStandardCategory { get; set; }
 
+        public CategoryType CategoryType { get; set; }
         public string GetImage()
         {
             if (emoji!=null)
