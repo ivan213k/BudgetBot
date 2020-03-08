@@ -1,4 +1,5 @@
-﻿using BudgetBot.Models.StateData;
+﻿using BudgetBot.Models.DataBase;
+using BudgetBot.Models.StateData;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,6 +15,7 @@ namespace BudgetBot.Models.Command
 
         private List<Expense> userExpenses = new List<Expense>();
 
+        private BotDbContext dbContext = new BotDbContext();
         private void AddExpense(long userId,string category="",decimal amount=default,DateTime date = default)
         {
             var record = userExpenses.Where(r => r.UserId == userId).FirstOrDefault();
@@ -21,7 +23,7 @@ namespace BudgetBot.Models.Command
             {
                 if (category != "")
                 {
-                    record.Category = category;
+                    record.Category = dbContext.GetCategory(userId,category,CategoryType.Expense);
                 }
                 if (amount != default)
                 {
@@ -34,7 +36,7 @@ namespace BudgetBot.Models.Command
             }
             else
             {
-                userExpenses.Add(new Expense(userId, category, amount, date));
+                userExpenses.Add(new Expense(userId, dbContext.GetCategory(userId, category, CategoryType.Expense), amount, date));
             }
         }
 
@@ -46,7 +48,7 @@ namespace BudgetBot.Models.Command
             if (GetCurrentStep(userId) == 0)
             {
                 State.AddCurrentCommand(userId, Name);
-                await Bot.SendExpenseCategories(update.Message, "Виберіть категорію зі списку: ");
+                await Bot.SendCategories(update.Message, "Виберіть категорію зі списку: ",CategoryType.Expense);
                 NextStep(userId);
                 return;
             }
@@ -69,10 +71,11 @@ namespace BudgetBot.Models.Command
                 var expense = userExpenses.Where(r => r.UserId == userId).Single();
                 var successEmoji = new Emoji(0x2705);
                 await client.SendTextMessageAsync(chatId, successEmoji + $" Витрату додано:\n" +
-                    $"Категорія - {expense.Category}\n" +
+                    $"Категорія - {expense.Category.Name}\n" +
                     $"Сума - {expense.Amount}$\n" +
                     $"Дата - {expense.Date.ToShortDateString()}");
-                Repository.Expenses.Add(expense);
+                await dbContext.Expenses.AddAsync(expense);
+                await dbContext.SaveChangesAsync();
                 userExpenses.Remove(expense);
                 State.FinishCurrentCommand(userId);
                 ResetCommandSteps(userId);

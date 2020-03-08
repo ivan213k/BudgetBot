@@ -1,4 +1,5 @@
 ﻿using BudgetBot.Models.Command;
+using BudgetBot.Models.DataBase;
 using BudgetBot.Models.StateData;
 using System;
 using System.Collections.Generic;
@@ -13,6 +14,7 @@ namespace BudgetBot.Models.Commands
     {
         public override string Name { get => "/addrevenue"; }
 
+        private BotDbContext dbContext = new BotDbContext();
         public override async Task Execute(Update update, TelegramBotClient client)
         {
             var userId = GetUserId(update);
@@ -21,7 +23,7 @@ namespace BudgetBot.Models.Commands
             if (GetCurrentStep(userId)==0)
             {
                 State.AddCurrentCommand(userId, Name);
-                await Bot.SendRevenueCategories(update.Message,"Виберіть категорію доходу\t");
+                await Bot.SendCategories(update.Message,"Виберіть категорію доходу\t", CategoryType.Revenue);
                 NextStep(userId);
                 return;
             }
@@ -44,10 +46,11 @@ namespace BudgetBot.Models.Commands
                 var revenue = userRevenues.Where(r => r.UserId == userId).Single();
                 var successEmoji = new Emoji(0x2705);
                 await client.SendTextMessageAsync(chatId, successEmoji + $" Дохід додано:\n" +
-                    $"Категорія доходу - {revenue.Category}\n" +
+                    $"Категорія доходу - {revenue.Category.Name}\n" +
                     $"Сума - {revenue.Amount}$\n" +
                     $"Дата - {revenue.Date.ToShortDateString()}");
-                Repository.Revenues.Add(revenue);
+                dbContext.Revenues.Add(revenue);
+                await dbContext.SaveChangesAsync();
                 userRevenues.Remove(revenue);
                 State.FinishCurrentCommand(userId);
                 ResetCommandSteps(userId);
@@ -63,7 +66,7 @@ namespace BudgetBot.Models.Commands
             {
                 if (category != "")
                 {
-                    record.Category = category;
+                    record.Category = dbContext.GetCategory(userId,category,CategoryType.Revenue);
                 }
                 if (amount != default)
                 {
@@ -76,7 +79,7 @@ namespace BudgetBot.Models.Commands
             }
             else
             {
-                userRevenues.Add(new Revenue(userId, category, amount, date));
+                userRevenues.Add(new Revenue(userId, dbContext.GetCategory(userId,category,CategoryType.Revenue), amount, date));
             }
         }
     }

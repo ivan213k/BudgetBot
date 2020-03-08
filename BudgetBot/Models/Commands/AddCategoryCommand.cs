@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Threading.Tasks;
 using BudgetBot.Models.Command;
+using BudgetBot.Models.DataBase;
 using BudgetBot.Models.StateData;
 using Telegram.Bot;
 using Telegram.Bot.Types;
@@ -16,14 +17,13 @@ namespace BudgetBot.Models.Commands
 
         List<Category> UserCategories { get; set; } = new List<Category>();
 
+        private BotDbContext dbContext = new BotDbContext();
         void AddCategory(long userId,string name = null, CategoryType categoryType = default)
         {
             var category = UserCategories.Where(r=>r.UserId== userId).FirstOrDefault();
             if (category ==null)
             {
-                category = new Category(userId, name);
-                category.CategoryType = categoryType;
-                UserCategories.Add(category);
+                UserCategories.Add(new Category(userId, name, categoryType));
             }
             else
             {
@@ -67,11 +67,11 @@ namespace BudgetBot.Models.Commands
             {
                 if (update.CallbackQuery.Data == "revenue")
                 {
-                    AddCategory(userId, categoryType: CategoryType.Revenue);
+                    AddCategory(userId, "", categoryType: CategoryType.Revenue);
                 }
                 if (update.CallbackQuery.Data == "expense")
                 {
-                    AddCategory(userId, categoryType: CategoryType.Expense);
+                    AddCategory(userId, "", categoryType: CategoryType.Expense);
                 }
                 await client.SendTextMessageAsync(chatId,"Введіть назву категорії");
                 NextStep(userId);
@@ -81,29 +81,18 @@ namespace BudgetBot.Models.Commands
             {
                 var category = UserCategories.Where(r => r.UserId == userId).Single();
                 category.Name = update.Message.Text;
+                if (dbContext.ContainsCategory(userId, category.Name,category.CategoryType))
+                {
+                    await client.SendTextMessageAsync(chatId, "Упс... така категорія вже існує, спробуйте ввести щось інше");
+                    return;
+                }
+                dbContext.Categories.Add(category);
+                await dbContext.SaveChangesAsync();
                 var successEmoji = new Emoji(0x2705);
-                if (category.CategoryType == CategoryType.Revenue)
-                {
-                    if (Repository.ContainsRevenueCategory(userId,category.Name))
-                    {
-                        await client.SendTextMessageAsync(chatId, "Упс... така категорія вже існує, спробуйте ввести щось інше");
-                        return;
-                    }
-                    Repository.RevenueCategories.Add(category);
-                    await client.SendTextMessageAsync(chatId, 
-                        successEmoji + $" Категорію <u><b>{category.Name}</b></u> додано в доходи", parseMode:ParseMode.Html);
-                }
-                if (category.CategoryType == CategoryType.Expense)
-                {
-                    if (Repository.ContainsExpenseCategory(userId,category.Name))
-                    {
-                        await client.SendTextMessageAsync(chatId, "Упс... така категорія вже існує, спробуйте ввести щось інше");
-                        return;
-                    }
-                    Repository.ExpenseCategories.Add(category);
-                    await client.SendTextMessageAsync(chatId, 
-                        successEmoji + $" Категорію <u><b>{category.Name}</b></u> додано до виитрат",parseMode:ParseMode.Html);
-                }
+                var answer = $" Категорію <u><b>{category.Name}</b></u> додано";
+                answer += category.CategoryType == CategoryType.Expense ? " до витрат" : " в доходи";
+
+                await client.SendTextMessageAsync(chatId, answer, ParseMode.Html);
                 UserCategories.Remove(category);
                 State.FinishCurrentCommand(userId);
                 ResetCommandSteps(userId);

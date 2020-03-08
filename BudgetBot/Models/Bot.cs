@@ -1,4 +1,5 @@
 ﻿using BudgetBot.Models.Command;
+using BudgetBot.Models.DataBase;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,6 +17,7 @@ namespace BudgetBot.Models
 
         private static List<Command.BaseCommand> commands;
 
+        private static BotDbContext dbContext = new BotDbContext();
         public static IReadOnlyList<Command.BaseCommand> Commands { get => commands.AsReadOnly(); }
         public static async Task<TelegramBotClient> Get()
         {
@@ -24,8 +26,8 @@ namespace BudgetBot.Models
                 return botClient;
             }
             botClient = new TelegramBotClient(AppSettings.Token);
-            commands = new List<BaseCommand>();
 
+            commands = new List<BaseCommand>();
             var types = Assembly.GetExecutingAssembly().GetTypes().Where(t => t.BaseType == typeof(BaseCommand));
             foreach (var type in types)
             {
@@ -35,33 +37,15 @@ namespace BudgetBot.Models
             await botClient.SetWebhookAsync(AppSettings.Url + "/api/message/update");
             return botClient;
         }
-        public static async Task SendExpenseCategories(Message message, string messageText)
+        public static async Task SendCategories(Message message, string messageText, CategoryType categoryType)
         {
             var chatId = message.Chat.Id;
             var buttons = new List<List<InlineKeyboardButton>>();
-            foreach (var category in Repository.GetExpenseCategories(message.From.Id))
+            foreach (var category in dbContext.GetCategories(message.From.Id, categoryType))
             {
                 var row = new List<InlineKeyboardButton>();
                 var button = new InlineKeyboardButton();
                 button.Text = category.GetImage()+ " " + category.Name;
-                button.CallbackData = category.Name;
-                row.Add(button);
-                buttons.Add(row);
-            }
-            var keyboard = new InlineKeyboardMarkup(buttons);
-
-            await botClient.SendTextMessageAsync(chatId, messageText, replyMarkup: keyboard);
-        }
-
-        public static async Task SendRevenueCategories(Message message, string messageText)
-        {
-            var chatId = message.Chat.Id;
-            var buttons = new List<List<InlineKeyboardButton>>();
-            foreach (var category in Repository.GetRevenueCategories(message.From.Id))
-            {
-                var row = new List<InlineKeyboardButton>();
-                var button = new InlineKeyboardButton();
-                button.Text = category.GetImage() + " " + category.Name;
                 button.CallbackData = category.Name;
                 row.Add(button);
                 buttons.Add(row);

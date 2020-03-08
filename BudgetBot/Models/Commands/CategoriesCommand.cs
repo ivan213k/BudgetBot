@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using BudgetBot.Models.DataBase;
+using System.Threading.Tasks;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 
@@ -10,7 +11,7 @@ namespace BudgetBot.Models.Command
 
         public override async Task Execute(Update update, TelegramBotClient client)
         {
-            await Bot.SendExpenseCategories(update.Message,"Список категорій: ");
+            await Bot.SendCategories(update.Message,"Список категорій: ", CategoryType.Expense);
         }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using BudgetBot.Models.Command;
+using BudgetBot.Models.DataBase;
 using BudgetBot.Models.Statistics;
 using System.Linq;
 using System.Threading.Tasks;
@@ -12,6 +13,7 @@ namespace BudgetBot.Models.Commands
     {
         public override string Name { get => "/getexpensestat"; }
 
+        private BotDbContext dbContext = new BotDbContext();
         public override async Task Execute(Update update, TelegramBotClient client)
         {
             var userId = GetUserId(update);
@@ -21,7 +23,7 @@ namespace BudgetBot.Models.Commands
             var statisticManager = new StatisticsManager();
             foreach (var row in statisticManager.GetExpensesStatistic(userId))
             {
-                var categoryEmoji = Repository.GetExpenseCategoryEmoji(row.Categrory);
+                var categoryEmoji = dbContext.GetCategoryEmoji(row.Categrory,CategoryType.Expense);
                 answer += $"\t\t\t{categoryEmoji} {row.Categrory} - {row.TotalAmount} ({row.Percent}%)\n";
             }
             answer += $"Загальна сума витрат: <u><b>{statisticManager.GetTotalAmountOfExpenses(userId)}</b></u>";

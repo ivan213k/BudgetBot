@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Telegram.Bot.Types;
 
 namespace BudgetBot.Controllers
 {
