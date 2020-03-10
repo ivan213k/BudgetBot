@@ -7,7 +7,6 @@ using BudgetBot.Models.StateData;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
-using Telegram.Bot.Types.ReplyMarkups;
 
 namespace BudgetBot.Models.Commands
 {
@@ -42,28 +41,16 @@ namespace BudgetBot.Models.Commands
         {
             var userId = GetUserId(update);
             var chatId = GetChatId(update);
-            InitCommandSteps(userId);
-            if (GetCurrentStep(userId)==0)
+            if (State.GetCurrentStep(userId)==0)
             {
-                State.AddCurrentCommand(userId,Name);
-                var revenueButton = new InlineKeyboardButton();
-                revenueButton.Text = new Emoji(0x1F4C8).ToString() + " В доходи";
-                revenueButton.CallbackData = "revenue";
-
-                var expenseButton = new InlineKeyboardButton();
-                expenseButton.Text = new Emoji(0x1F4C9).ToString() + " До витрат";
-                expenseButton.CallbackData = "expense";
-                var buttons = new List<InlineKeyboardButton>()
-                {
-                    revenueButton,
-                    expenseButton
-                };
-                var keyboard = new InlineKeyboardMarkup(buttons);
-                await client.SendTextMessageAsync(chatId, "Куди саме додати категорію?", replyMarkup: keyboard);
-                NextStep(userId);
+                var revenueButton = Bot.MakeInlineButton($"{new Emoji(0x1F4C8)} В доходи", "revenue");
+                var expenseButton = Bot.MakeInlineButton($"{new Emoji(0x1F4C9)} До витрат", "expense");
+                
+                await client.SendTextMessageAsync(chatId, "Куди саме додати категорію?", replyMarkup: Bot.MakeInlineKeyboard(revenueButton,expenseButton));
+                State.NextStep(userId);
                 return;
             }
-            if (GetCurrentStep(userId)==1)
+            if (State.GetCurrentStep(userId)==1)
             {
                 if (update.CallbackQuery.Data == "revenue")
                 {
@@ -74,10 +61,10 @@ namespace BudgetBot.Models.Commands
                     AddCategory(userId, "", categoryType: CategoryType.Expense);
                 }
                 await client.SendTextMessageAsync(chatId,"Введіть назву категорії");
-                NextStep(userId);
+                State.NextStep(userId);
                 return;
             }
-            if (GetCurrentStep(userId)==2)
+            if (State.GetCurrentStep(userId)==2)
             {
                 var category = UserCategories.Where(r => r.UserId == userId).Single();
                 category.Name = update.Message.Text;
@@ -95,7 +82,6 @@ namespace BudgetBot.Models.Commands
                 await client.SendTextMessageAsync(chatId, answer, ParseMode.Html);
                 UserCategories.Remove(category);
                 State.FinishCurrentCommand(userId);
-                ResetCommandSteps(userId);
             }
         }
     }

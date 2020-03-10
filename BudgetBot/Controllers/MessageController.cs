@@ -20,6 +20,7 @@ namespace BudgetBot.Controllers
                 var userId = update.Message.From.Id;
                 if (Bot.HasCommand(update.Message.Text))
                 {
+                    State.AddCurrentCommand(userId, update.Message.Text);
                     await commands.Where(r => r.Name == update.Message.Text).Single().Execute(update, client);
                 }
                 else if (State.GetCurrentCommand(userId)!=null)
@@ -29,7 +30,7 @@ namespace BudgetBot.Controllers
                 }
                 else
                 {
-                    await client.SendTextMessageAsync(update.Message.Chat.Id,"Команду не розпізнано(");
+                    await client.SendTextMessageAsync(update.Message.Chat.Id, $"Команду не розпізнано {new Emoji(0x1F61E)}");
                 }
             }
             if (update.Type == UpdateType.CallbackQuery)

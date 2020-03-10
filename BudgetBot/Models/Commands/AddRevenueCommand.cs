@@ -19,22 +19,20 @@ namespace BudgetBot.Models.Commands
         {
             var userId = GetUserId(update);
             var chatId = GetChatId(update);
-            InitCommandSteps(userId);
-            if (GetCurrentStep(userId)==0)
+            if (State.GetCurrentStep(userId) == 0)
             {
-                State.AddCurrentCommand(userId, Name);
                 await Bot.SendCategories(update.Message,"Виберіть категорію доходу\t", CategoryType.Revenue);
-                NextStep(userId);
+                State.NextStep(userId);
                 return;
             }
-            if (GetCurrentStep(userId)==1)
+            if (State.GetCurrentStep(userId) == 1)
             {
                 AddRevenue(userId,category: update.CallbackQuery.Data);
                 await client.SendTextMessageAsync(chatId,"Введіть суму доходу");
-                NextStep(userId);
+                State.NextStep(userId);
                 return;
             }
-            if (GetCurrentStep(userId) == 2)
+            if (State.GetCurrentStep(userId) == 2)
             {
                 if (!decimal.TryParse(update.Message.Text, out decimal amount))
                 {
@@ -45,15 +43,21 @@ namespace BudgetBot.Models.Commands
 
                 var revenue = userRevenues.Where(r => r.UserId == userId).Single();
                 var successEmoji = new Emoji(0x2705);
-                await client.SendTextMessageAsync(chatId, successEmoji + $" Дохід додано:\n" +
+
+                var selectDateButton = Bot.MakeInlineButton($"{new Emoji(0x1F4C6)}Змінити дату", "selectDate");
+                var cancelButton = Bot.MakeInlineButton($"{new Emoji(0x274C)}Скасувати", "cancel");
+
+                var answer = $"{successEmoji} Дохід додано:\n" +
                     $"Категорія доходу - {revenue.Category.Name}\n" +
                     $"Сума - {revenue.Amount}$\n" +
-                    $"Дата - {revenue.Date.ToShortDateString()}");
+                    $"Дата - {revenue.Date.ToShortDateString()}";
+
+                await client.SendTextMessageAsync(chatId, answer, replyMarkup:Bot.MakeInlineKeyboard(selectDateButton,cancelButton));
+
                 dbContext.Revenues.Add(revenue);
                 await dbContext.SaveChangesAsync();
                 userRevenues.Remove(revenue);
                 State.FinishCurrentCommand(userId);
-                ResetCommandSteps(userId);
             }
         }
 

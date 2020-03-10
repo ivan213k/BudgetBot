@@ -1,10 +1,8 @@
 ﻿using BudgetBot.Models.Command;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using static BudgetBot.Models.StateData.State;
 
 namespace BudgetBot.Models.Commands
 {
@@ -25,6 +23,7 @@ namespace BudgetBot.Models.Commands
                 "/balance - баланс\n" +
                 "/addcategory - додати категорію витрат чи доходів";
             await client.SendTextMessageAsync(chatId, answer);
+            FinishCurrentCommand(GetUserId(update));
         }
     }
 }

@@ -44,17 +44,25 @@ namespace BudgetBot.Models
             foreach (var category in dbContext.GetCategories(message.From.Id, categoryType))
             {
                 var row = new List<InlineKeyboardButton>();
-                var button = new InlineKeyboardButton();
-                button.Text = category.GetImage()+ " " + category.Name;
-                button.CallbackData = category.Name;
-                row.Add(button);
+                row.Add(MakeInlineButton(category.GetImage() + " " + category.Name, category.Name));
                 buttons.Add(row);
             }
-            var keyboard = new InlineKeyboardMarkup(buttons);
 
-            await botClient.SendTextMessageAsync(chatId, messageText, replyMarkup: keyboard);
+            await botClient.SendTextMessageAsync(chatId, messageText, replyMarkup: new InlineKeyboardMarkup(buttons));
         }
 
+        public static InlineKeyboardButton MakeInlineButton(string text, string callBackData)
+        {
+            var inlineButton = new InlineKeyboardButton();
+            inlineButton.Text = text;
+            inlineButton.CallbackData = callBackData;
+            return inlineButton;
+        }
+
+        public static InlineKeyboardMarkup MakeInlineKeyboard(params InlineKeyboardButton[] buttons)
+        {
+            return new InlineKeyboardMarkup(buttons); 
+        }
         public static bool HasCommand(string commandName)
         {
             foreach (var command in commands)

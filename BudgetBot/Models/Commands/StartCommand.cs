@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using static BudgetBot.Models.StateData.State;
 
 namespace BudgetBot.Models.Commands
 {
@@ -20,6 +21,7 @@ namespace BudgetBot.Models.Commands
                 "-Відображати статистику витрат, доходів та баланс\n" +
                 "Щоб почати роботу скористайтесь доступними командами.";
             await client.SendTextMessageAsync(chatId, answer);
+            FinishCurrentCommand(GetUserId(update));
         }
     }
 }

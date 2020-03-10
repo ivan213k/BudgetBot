@@ -1,11 +1,11 @@
 ﻿using BudgetBot.Models.Command;
 using BudgetBot.Models.DataBase;
 using BudgetBot.Models.Statistics;
-using System.Linq;
 using System.Threading.Tasks;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
+using static BudgetBot.Models.StateData.State;
 
 namespace BudgetBot.Models.Commands
 {
@@ -28,6 +28,7 @@ namespace BudgetBot.Models.Commands
             }
             answer += $"Загальна сума витрат: <u><b>{statisticManager.GetTotalAmountOfExpenses(userId)}</b></u>";
             await client.SendTextMessageAsync(chatId,answer,parseMode: ParseMode.Html);
+            FinishCurrentCommand(userId);
         }
     }
 }

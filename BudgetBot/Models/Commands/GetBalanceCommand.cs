@@ -3,6 +3,7 @@ using BudgetBot.Models.Statistics;
 using System.Threading.Tasks;
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using static BudgetBot.Models.StateData.State;
 
 namespace BudgetBot.Models.Commands
 {
@@ -30,6 +31,7 @@ namespace BudgetBot.Models.Commands
                 $"Баланс\t\t {TotalAmountOfRevenues - totalAmountOfExpenses}";
              
             await client.SendTextMessageAsync(chatId, answer);
+            FinishCurrentCommand(userId);
         }
     }
 }

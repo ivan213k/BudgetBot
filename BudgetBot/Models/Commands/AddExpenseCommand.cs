@@ -1,11 +1,12 @@
 ﻿using BudgetBot.Models.DataBase;
-using BudgetBot.Models.StateData;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using Telegram.Bot.Types.Enums;
+using static BudgetBot.Models.StateData.State;
 
 namespace BudgetBot.Models.Command
 {
@@ -44,10 +45,8 @@ namespace BudgetBot.Models.Command
         {
             var userId = GetUserId(update);
             var chatId = GetChatId(update);
-            InitCommandSteps(userId);
             if (GetCurrentStep(userId) == 0)
             {
-                State.AddCurrentCommand(userId, Name);
                 await Bot.SendCategories(update.Message, "Виберіть категорію зі списку: ",CategoryType.Expense);
                 NextStep(userId);
                 return;
@@ -67,18 +66,35 @@ namespace BudgetBot.Models.Command
                     return;
                 }
                 AddExpense(userId, amount: amount, date: DateTime.Now);
-
-                var expense = userExpenses.Where(r => r.UserId == userId).Single();
+                var expense = userExpenses.Where(r => r.UserId == userId).Single(); ;
+                
                 var successEmoji = new Emoji(0x2705);
-                await client.SendTextMessageAsync(chatId, successEmoji + $" Витрату додано:\n" +
+                var answer = successEmoji + $" Витрату додано:\n" +
                     $"Категорія - {expense.Category.Name}\n" +
                     $"Сума - {expense.Amount}$\n" +
-                    $"Дата - {expense.Date.ToShortDateString()}");
+                    $"Дата - {expense.Date.ToShortDateString()}";
+
+                var selectDateButton = Bot.MakeInlineButton($"{new Emoji(0x1F4C6)}Змінити дату","selectDate");
+                var cancelButton = Bot.MakeInlineButton($"{new Emoji(0x274C)}Скасувати", "cancel");
+
+                await client.SendTextMessageAsync(chatId, answer,replyMarkup: Bot.MakeInlineKeyboard(selectDateButton,cancelButton));
                 await dbContext.Expenses.AddAsync(expense);
                 await dbContext.SaveChangesAsync();
                 userExpenses.Remove(expense);
-                State.FinishCurrentCommand(userId);
-                ResetCommandSteps(userId);
+                NextStep(userId);
+                return;
+            }
+            if (GetCurrentStep(userId) == 3)
+            {
+                if (update.Type == UpdateType.CallbackQuery)
+                {
+                    if (update.CallbackQuery.Data == "cancel")
+                    {
+                        await client.SendTextMessageAsync(chatId, $"{new Emoji(0x274C)} Видалено");
+                        FinishCurrentCommand(userId);
+                    }
+                    
+                }
             }
         }
     }

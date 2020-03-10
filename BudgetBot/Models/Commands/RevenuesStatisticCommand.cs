@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
+using static BudgetBot.Models.StateData.State;
 
 namespace BudgetBot.Models.Commands
 {
@@ -27,6 +28,7 @@ namespace BudgetBot.Models.Commands
             }
             answer += $"Загальна сума доходів: <u><b>{statisticManager.GetTotalAmountOfRevenues(userId)}</b></u>";
             await client.SendTextMessageAsync(chatId, answer, ParseMode.Html);
+            FinishCurrentCommand(userId);
         }
     }
 }
