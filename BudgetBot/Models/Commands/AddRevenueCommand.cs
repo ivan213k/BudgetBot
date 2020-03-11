@@ -7,6 +7,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using Telegram.Bot.Types.Enums;
 
 namespace BudgetBot.Models.Commands
 {
@@ -54,15 +55,34 @@ namespace BudgetBot.Models.Commands
 
                 await client.SendTextMessageAsync(chatId, answer, replyMarkup:Bot.MakeInlineKeyboard(selectDateButton,cancelButton));
 
-                dbContext.Revenues.Add(revenue);
+                var insertedRevenue = (await dbContext.Revenues.AddAsync(revenue)).Entity;
+                AddInsertedRevenue(userId, insertedRevenue);
                 await dbContext.SaveChangesAsync();
                 userRevenues.Remove(revenue);
-                State.FinishCurrentCommand(userId);
+                State.NextStep(userId);
+            }
+            if (State.GetCurrentStep(userId) == 3)
+            {
+                if (update.Type == UpdateType.CallbackQuery)
+                {
+                    if (update.CallbackQuery.Data == "cancel")
+                    {
+                        dbContext.Revenues.Remove(insertedRevenues[userId]);
+                        dbContext.SaveChanges();
+                        var answer = $"{new Emoji(0x274C)} <u><b>ВИДАЛЕНО:</b></u>\n" +
+                                    $"Категорія - {insertedRevenues[userId].Category.Name}\n" +
+                                    $"Сума - {insertedRevenues[userId].Amount}$\n" +
+                                    $"Дата - {insertedRevenues[userId].Date.ToShortDateString()}";
+                        await client.EditMessageTextAsync(chatId, update.CallbackQuery.Message.MessageId, answer, parseMode: ParseMode.Html);
+                        State.FinishCurrentCommand(userId);
+                    }
+                }
             }
         }
 
         private List<Revenue> userRevenues = new List<Revenue>();
 
+        private Dictionary<long, Revenue> insertedRevenues = new Dictionary<long, Revenue>();
         private void AddRevenue(long userId, string category = "", decimal amount = default, DateTime date = default)
         {
             var record = userRevenues.Where(r => r.UserId == userId).FirstOrDefault();
@@ -84,6 +104,17 @@ namespace BudgetBot.Models.Commands
             else
             {
                 userRevenues.Add(new Revenue(userId, dbContext.GetCategory(userId,category,CategoryType.Revenue), amount, date));
+            }
+        }
+        private void AddInsertedRevenue(long userId, Revenue revenue)
+        {
+            if (insertedRevenues.ContainsKey(userId))
+            {
+                insertedRevenues[userId] = revenue;
+            }
+            else
+            {
+                insertedRevenues.Add(userId, revenue);
             }
         }
     }
