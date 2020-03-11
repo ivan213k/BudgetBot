@@ -14,32 +14,7 @@ namespace BudgetBot.Models.Command
     {
         public override string Name { get => "/addexpense"; }
 
-        private List<Expense> userExpenses = new List<Expense>();
-
         private BotDbContext dbContext = new BotDbContext();
-        private void AddExpense(long userId,string category="",decimal amount=default,DateTime date = default)
-        {
-            var record = userExpenses.Where(r => r.UserId == userId).FirstOrDefault();
-            if (record!=null)
-            {
-                if (category != "")
-                {
-                    record.Category = dbContext.GetCategory(userId,category,CategoryType.Expense);
-                }
-                if (amount != default)
-                {
-                    record.Amount = amount;
-                }
-                if (date != default)
-                {
-                    record.Date = date;
-                }     
-            }
-            else
-            {
-                userExpenses.Add(new Expense(userId, dbContext.GetCategory(userId, category, CategoryType.Expense), amount, date));
-            }
-        }
 
         public override async Task Execute(Update update, TelegramBotClient client)
         {
@@ -66,7 +41,7 @@ namespace BudgetBot.Models.Command
                     return;
                 }
                 AddExpense(userId, amount: amount, date: DateTime.Now);
-                var expense = userExpenses.Where(r => r.UserId == userId).Single(); ;
+                var expense = userExpenses.Where(r=>r.UserId == userId).Single();
                 
                 var successEmoji = new Emoji(0x2705);
                 var answer = successEmoji + $" Витрату додано:\n" +
@@ -78,9 +53,10 @@ namespace BudgetBot.Models.Command
                 var cancelButton = Bot.MakeInlineButton($"{new Emoji(0x274C)}Скасувати", "cancel");
 
                 await client.SendTextMessageAsync(chatId, answer,replyMarkup: Bot.MakeInlineKeyboard(selectDateButton,cancelButton));
-                await dbContext.Expenses.AddAsync(expense);
+                AddInsertedExpense(userId,(await dbContext.Expenses.AddAsync(expense)).Entity);
+                
                 await dbContext.SaveChangesAsync();
-                userExpenses.Remove(expense);
+                userExpenses.Remove(expense);  
                 NextStep(userId);
                 return;
             }
@@ -90,11 +66,56 @@ namespace BudgetBot.Models.Command
                 {
                     if (update.CallbackQuery.Data == "cancel")
                     {
-                        await client.SendTextMessageAsync(chatId, $"{new Emoji(0x274C)} Видалено");
+                        dbContext.Expenses.Remove(insertedExpense[userId]);
+                        dbContext.SaveChanges();
+                        var answer = $"{new Emoji(0x274C)} <u><b>ВИДАЛЕНО:</b></u>\n" +
+                                    $"Категорія - {insertedExpense[userId].Category.Name}\n" +
+                                    $"Сума - {insertedExpense[userId].Amount}$\n" +
+                                    $"Дата - {insertedExpense[userId].Date.ToShortDateString()}";
+                        await client.EditMessageTextAsync(chatId,update.CallbackQuery.Message.MessageId,answer,parseMode:ParseMode.Html);
                         FinishCurrentCommand(userId);
                     }
                     
                 }
+            }
+        }
+
+        private List<Expense> userExpenses = new List<Expense>();
+
+        private Dictionary<long, Expense> insertedExpense = new Dictionary<long, Expense>();
+
+        private void AddInsertedExpense(long userId, Expense expense)
+        {
+            if (insertedExpense.ContainsKey(userId))
+            {
+                insertedExpense[userId] = expense;
+            }
+            else
+            {
+                insertedExpense.Add(userId, expense);
+            }
+        }
+        private void AddExpense(long userId, string category = "", decimal amount = default, DateTime date = default)
+        {
+            var record = userExpenses.Where(r => r.UserId == userId).FirstOrDefault();
+            if (record != null)
+            {
+                if (category != "")
+                {
+                    record.Category = dbContext.GetCategory(userId, category, CategoryType.Expense);
+                }
+                if (amount != default)
+                {
+                    record.Amount = amount;
+                }
+                if (date != default)
+                {
+                    record.Date = date;
+                }
+            }
+            else
+            {
+                userExpenses.Add(new Expense(userId, dbContext.GetCategory(userId, category, CategoryType.Expense), amount, date));
             }
         }
     }
