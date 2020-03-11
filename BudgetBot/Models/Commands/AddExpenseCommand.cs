@@ -1,6 +1,7 @@
 ﻿using BudgetBot.Models.DataBase;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Telegram.Bot;
@@ -16,6 +17,7 @@ namespace BudgetBot.Models.Command
 
         private BotDbContext dbContext = new BotDbContext();
 
+        private IFormatProvider culture = new CultureInfo("uk-Ua");
         public override async Task Execute(Update update, TelegramBotClient client)
         {
             var userId = GetUserId(update);
@@ -75,7 +77,34 @@ namespace BudgetBot.Models.Command
                         await client.EditMessageTextAsync(chatId,update.CallbackQuery.Message.MessageId,answer,parseMode:ParseMode.Html);
                         FinishCurrentCommand(userId);
                     }
-                    
+                    if (update.CallbackQuery.Data == "selectDate")
+                    {
+                        await client.EditMessageTextAsync(chatId,update.CallbackQuery.Message.MessageId,
+                            $"Введіть дату в наступному форматі: <b>{DateTime.Now.ToString("dd.MM.yyyy",culture)}</b>",parseMode:ParseMode.Html);
+                        NextStep(userId);
+                    }   
+                }
+            }
+            if (GetCurrentStep(userId)==4)
+            {
+                if (DateTime.TryParse(update.Message.Text,out DateTime date))
+                {
+                    insertedExpense[userId].Date = date;
+                    dbContext.Expenses.Update(insertedExpense[userId]);
+                    await dbContext.SaveChangesAsync();
+                    var successEmoji = new Emoji(0x2705);
+                    var answer = successEmoji + $" Витрату відредаговано:\n" +
+                        $"Категорія - {insertedExpense[userId].Category.Name}\n" +
+                        $"Сума - {insertedExpense[userId].Amount}$\n" +
+                        $"Дата - {insertedExpense[userId].Date.ToShortDateString()}";
+                    var selectDateButton = Bot.MakeInlineButton($"{new Emoji(0x1F4C6)}Змінити дату", "selectDate");
+                    var cancelButton = Bot.MakeInlineButton($"{new Emoji(0x274C)}Скасувати", "cancel");
+                    await client.SendTextMessageAsync(chatId, answer, replyMarkup: Bot.MakeInlineKeyboard(selectDateButton, cancelButton));
+                    PreviousStep(userId);
+                }
+                else
+                {
+                    await client.SendTextMessageAsync(chatId,"Упс... Не вдалось розпізнати дату, спробуйте ще раз");
                 }
             }
         }

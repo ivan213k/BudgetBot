@@ -41,5 +41,9 @@ namespace BudgetBot.Models.StateData
         {
             currentCommands[userId].CurrentStep = currentCommands[userId].CurrentStep + 1;
         }
+        public static void PreviousStep(long userId)
+        {
+            currentCommands[userId].CurrentStep = currentCommands[userId].CurrentStep - 1;
+        }
     }
 }
