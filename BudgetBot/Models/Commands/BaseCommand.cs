@@ -28,5 +28,14 @@ namespace BudgetBot.Models.Command
             }
             return update.CallbackQuery.Message.Chat.Id;
         }
+
+        protected int GetMessageId(Update update)
+        {
+            if (update.Message!=null)
+            {
+                return update.Message.MessageId;
+            }
+            return update.CallbackQuery.Message.MessageId;
+        }
     }
 }

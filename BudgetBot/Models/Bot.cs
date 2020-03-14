@@ -63,6 +63,12 @@ namespace BudgetBot.Models
         {
             return new InlineKeyboardMarkup(buttons); 
         }
+        public static InlineKeyboardMarkup MakeDateSwichKeyboard()
+        {
+            var leftButton = MakeInlineButton("<<<","left");
+            var rightButton = MakeInlineButton(">>>", "right");
+            return MakeInlineKeyboard(leftButton,rightButton);
+        }
         public static bool HasCommand(string commandName)
         {
             foreach (var command in commands)

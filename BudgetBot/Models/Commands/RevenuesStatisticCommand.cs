@@ -27,7 +27,7 @@ namespace BudgetBot.Models.Commands
                 answer += $"\t\t\t\t{categoryEmoji} {row.Categrory} - {row.TotalAmount} ({row.Percent}%)\n";
             }
             answer += $"Загальна сума доходів: <u><b>{statisticManager.GetTotalAmountOfRevenues(userId)}</b></u>";
-            await client.SendTextMessageAsync(chatId, answer, ParseMode.Html);
+            await client.SendTextMessageAsync(chatId, answer, ParseMode.Html,replyMarkup:Bot.MakeDateSwichKeyboard());
             FinishCurrentCommand(userId);
         }
     }
