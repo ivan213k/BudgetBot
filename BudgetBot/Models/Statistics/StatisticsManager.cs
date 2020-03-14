@@ -51,6 +51,20 @@ namespace BudgetBot.Models.Statistics
             return revenueStatistics.OrderByDescending(r => r.TotalAmount).ToList();
         }
 
+        public List<RevenueStatistic> GetRevenuesStatistic(long userId, DateTime startDate, DateTime endDate)
+        {
+            var revenues = dbContext.GetRevenues(userId).Where(r => r.Date >= startDate && r.Date <= endDate);
+            decimal totalAmount = revenues.Select(r => r.Amount).Sum();
+            var revenueStatistic = new List<RevenueStatistic>();
+            foreach (var category in revenues.Select(r => r.Category.Name).Distinct())
+            {
+                var categoryAmount = revenues.Where(r => r.Category.Name == category).Select(r => r.Amount).Sum();
+                var percent = Math.Round(categoryAmount * 100 / revenues.Select(r => r.Amount).Sum(), 1);
+                revenueStatistic.Add(new RevenueStatistic(category, categoryAmount, percent));
+            }
+
+            return revenueStatistic.OrderByDescending(r => r.TotalAmount).ToList();
+        }
         public decimal GetTotalAmountOfExpenses(long userId)
         {
             return dbContext.GetExpenses(userId).Select(r => r.Amount).Sum();
@@ -62,6 +76,10 @@ namespace BudgetBot.Models.Statistics
         public decimal GetTotalAmountOfRevenues(long userId)
         {
             return dbContext.GetRevenues(userId).Select(r => r.Amount).Sum();
+        }
+        public decimal GetTotalAmountOfRevenues(long userId, DateTime startDate, DateTime endDate)
+        {
+            return dbContext.GetRevenues(userId).Where(r => r.Date >= startDate && r.Date <= endDate).Select(r => r.Amount).Sum();
         }
     }
 }
