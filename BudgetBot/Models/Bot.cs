@@ -15,10 +15,10 @@ namespace BudgetBot.Models
     {
         private static TelegramBotClient botClient;
 
-        private static List<Command.BaseCommand> commands;
+        private static List<BaseCommand> commands;
 
         private static BotDbContext dbContext = new BotDbContext();
-        public static IReadOnlyList<Command.BaseCommand> Commands { get => commands.AsReadOnly(); }
+        public static IReadOnlyList<BaseCommand> Commands { get => commands.AsReadOnly(); }
         public static async Task<TelegramBotClient> Get()
         {
             if (botClient!=null)
