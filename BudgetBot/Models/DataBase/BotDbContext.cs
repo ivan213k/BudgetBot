@@ -1,4 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -18,17 +20,25 @@ namespace BudgetBot.Models.DataBase
         public BotDbContext(DbContextOptions<BotDbContext> options)
             : base(options)
         {
-            Database.EnsureCreated();
+            
+           Database.EnsureCreated();
         }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseSqlServer(@"Server = (localdb)\mssqllocaldb; Database = BotDb; Trusted_Connection = True;");
+            var builder = new ConfigurationBuilder();
+            builder.AddJsonFile("dbsettings.json");
+            var config = builder.Build();
+            #if DEBUG
+            optionsBuilder.UseSqlServer(config.GetConnectionString("LocalConnection"));
+            #else
+                optionsBuilder.UseSqlServer(config.GetConnectionString("RemoteConnection"));
+            #endif
         }
 
         public List<Category> GetCategories(long userId, CategoryType categoryType)
         {
-            return Categories.Where(r => (r.IsStandardCategory || r.UserId == userId)&&r.CategoryType == categoryType).
+            return Categories.Where(r => (r.IsStandardCategory || r.UserId == userId) && r.CategoryType == categoryType).
                 ToList();
         }
 
@@ -39,7 +49,7 @@ namespace BudgetBot.Models.DataBase
 
         public string GetCategoryEmoji(string categoryName, CategoryType categoryType)
         {
-            var category = Categories.Where(r => r.Name == categoryName&& r.CategoryType == categoryType).FirstOrDefault();
+            var category = Categories.Where(r => r.Name == categoryName && r.CategoryType == categoryType).FirstOrDefault();
             if (category == null)
             {
                 return "";
@@ -62,12 +72,23 @@ namespace BudgetBot.Models.DataBase
 
         public List<Expense> GetExpenses(long userId)
         {
-            return Expenses.Where(r => r.UserId == userId).Include(r=>r.Category).ToList();
+            return Expenses.Where(r => r.UserId == userId).Include(r => r.Category).ToList();
+        }
+        public List<Expense> GetExpenses(long userId, DateTime startDate, DateTime endDate)
+        {
+            return Expenses.Where(r => r.UserId == userId
+            &&(r.Date>=startDate&& r.Date<=endDate)).Include(r => r.Category).ToList();
         }
 
         public List<Revenue> GetRevenues(long userId)
         {
-            return Revenues.Where(r => r.UserId == userId).Include(r=>r.Category).ToList();
+            return Revenues.Where(r => r.UserId == userId).Include(r => r.Category).ToList();
+        }
+
+        public List<Revenue> GetRevenues(long userId, DateTime startDate, DateTime endDate)
+        {
+            return Revenues.Where(r => r.UserId == userId
+            &&(r.Date >= startDate && r.Date <= endDate)).Include(r => r.Category).ToList();
         }
     }
 }

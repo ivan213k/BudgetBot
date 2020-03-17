@@ -24,7 +24,7 @@ namespace BudgetBot.Models.Commands
             if (GetCurrentStep(userId) == 0)
             { 
                 var answer = GetBalanceText(userId);
-                await client.SendTextMessageAsync(chatId, answer,replyMarkup:Bot.MakeDateSwichKeyboard(), parseMode:ParseMode.Html);
+                await client.SendTextMessageAsync(chatId, answer, replyMarkup: Bot.MakeDateSwichKeyboard(), parseMode:ParseMode.Html);
                 NextStep(userId);
                 return;
             }
@@ -38,7 +38,7 @@ namespace BudgetBot.Models.Commands
                         PreviousMonth(userId);
                         var startDate = new DateTime(currentDates[userId].Year, currentDates[userId].Month, 01);
                         var endDate = startDate.AddMonths(1).AddDays(-1);
-                        var answer = GetBalanceText(userId,startDate,endDate);
+                        var answer = GetBalanceText(userId, startDate, endDate);
                         await client.EditMessageTextAsync(chatId, messageId, answer, parseMode: ParseMode.Html, replyMarkup: Bot.MakeDateSwichKeyboard());
                         return;
                     }
@@ -90,10 +90,10 @@ namespace BudgetBot.Models.Commands
                     : startDate.Value.ToString("MMMM", culture);
             }
             return $"{chartEmoji} Баланс за <u><b>{period}</b></u> \n" +
-                   $"Загальна сума доходів {upChart} - {totalAmountOfRevenues}\n\n" +
-                   $"Загальна сума витрат  {downChart} - {totalAmountOfExpenses}\n" +
+                   $"Загальна сума доходів {upChart} - {totalAmountOfRevenues} ₴\n\n" +
+                   $"Загальна сума витрат  {downChart} - {totalAmountOfExpenses} ₴\n" +
                    $"------------------------------\n" +
-                   $"Баланс\t\t {totalAmountOfRevenues - totalAmountOfExpenses}";
+                   $"Баланс\t\t {totalAmountOfRevenues - totalAmountOfExpenses} ₴";
         }
 
         private Dictionary<long, DateTime> currentDates = new Dictionary<long, DateTime>();

@@ -69,6 +69,13 @@ namespace BudgetBot.Models
             var rightButton = MakeInlineButton(">>>", "right");
             return MakeInlineKeyboard(leftButton,rightButton);
         }
+
+        public static InlineKeyboardMarkup MakeDateEditKeyboard()
+        {
+            var selectDateButton = MakeInlineButton($"{new Emoji(0x1F4C6)}Змінити дату", "selectDate");
+            var cancelButton = MakeInlineButton($"{new Emoji(0x274C)}Скасувати", "cancel");
+            return MakeInlineKeyboard(selectDateButton,cancelButton);
+        }
         public static bool HasCommand(string commandName)
         {
             foreach (var command in commands)

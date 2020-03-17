@@ -97,9 +97,9 @@ namespace BudgetBot.Models.Commands
             foreach (var row in expenseStatistics)
             {
                 var categoryEmoji = dbContext.GetCategoryEmoji(row.Categrory, CategoryType.Expense);
-                answer.Append($"\t\t\t{categoryEmoji} {row.Categrory} - {row.TotalAmount} ({row.Percent}%)\n");
+                answer.Append($"\t\t\t{categoryEmoji} {row.Categrory} - {row.TotalAmount} ₴ ({row.Percent}%)\n");
             }
-            answer.Append($"Загальна сума витрат: <u><b>{totalAmount}</b></u>");
+            answer.Append($"Загальна сума витрат: <u><b>{totalAmount} ₴</b></u>");
             return answer.ToString();
         }
         private void NextMonth(long userId)

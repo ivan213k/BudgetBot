@@ -41,6 +41,7 @@ namespace BudgetBot.Models.Commands
         {
             var userId = GetUserId(update);
             var chatId = GetChatId(update);
+            var messageId = GetMessageId(update);
             if (State.GetCurrentStep(userId)==0)
             {
                 var revenueButton = Bot.MakeInlineButton($"{new Emoji(0x1F4C8)} В доходи", "revenue");
@@ -60,7 +61,7 @@ namespace BudgetBot.Models.Commands
                 {
                     AddCategory(userId, "", categoryType: CategoryType.Expense);
                 }
-                await client.SendTextMessageAsync(chatId,"Введіть назву категорії");
+                await client.EditMessageTextAsync(chatId,messageId,"Введіть назву категорії");
                 State.NextStep(userId);
                 return;
             }
@@ -75,8 +76,7 @@ namespace BudgetBot.Models.Commands
                 }
                 dbContext.Categories.Add(category);
                 await dbContext.SaveChangesAsync();
-                var successEmoji = new Emoji(0x2705);
-                var answer = $" Категорію <u><b>{category.Name}</b></u> додано";
+                var answer = $"{new Emoji(0x2705)} Категорію <u><b>{category.Name}</b></u> додано";
                 answer += category.CategoryType == CategoryType.Expense ? " до витрат" : " в доходи";
 
                 await client.SendTextMessageAsync(chatId, answer, ParseMode.Html);

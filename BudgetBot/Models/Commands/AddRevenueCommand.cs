@@ -23,6 +23,7 @@ namespace BudgetBot.Models.Commands
         {
             var userId = GetUserId(update);
             var chatId = GetChatId(update);
+            var messageId = GetMessageId(update);
             if (State.GetCurrentStep(userId) == 0)
             {
                 await Bot.SendCategories(update.Message,"Виберіть категорію доходу\t", CategoryType.Revenue);
@@ -46,17 +47,9 @@ namespace BudgetBot.Models.Commands
                 AddRevenue(userId, amount: amount, date: DateTime.Now);
 
                 var revenue = userRevenues.Where(r => r.UserId == userId).Single();
-                var successEmoji = new Emoji(0x2705);
+                var answer = MakeAddedRevenueText(revenue);
 
-                var selectDateButton = Bot.MakeInlineButton($"{new Emoji(0x1F4C6)}Змінити дату", "selectDate");
-                var cancelButton = Bot.MakeInlineButton($"{new Emoji(0x274C)}Скасувати", "cancel");
-
-                var answer = $"{successEmoji} Дохід додано:\n" +
-                    $"Категорія доходу - {revenue.Category.Name}\n" +
-                    $"Сума - {revenue.Amount}$\n" +
-                    $"Дата - {revenue.Date.ToShortDateString()}";
-
-                await client.SendTextMessageAsync(chatId, answer, replyMarkup:Bot.MakeInlineKeyboard(selectDateButton,cancelButton));
+                await client.SendTextMessageAsync(chatId, answer, replyMarkup:Bot.MakeDateEditKeyboard());
 
                 var insertedRevenue = (await dbContext.Revenues.AddAsync(revenue)).Entity;
                 AddInsertedRevenue(userId, insertedRevenue);
@@ -74,14 +67,14 @@ namespace BudgetBot.Models.Commands
                         dbContext.SaveChanges();
                         var answer = $"{new Emoji(0x274C)} <u><b>ВИДАЛЕНО:</b></u>\n" +
                                     $"Категорія - {insertedRevenues[userId].Category.Name}\n" +
-                                    $"Сума - {insertedRevenues[userId].Amount}$\n" +
-                                    $"Дата - {insertedRevenues[userId].Date.ToShortDateString()}";
-                        await client.EditMessageTextAsync(chatId, update.CallbackQuery.Message.MessageId, answer, parseMode: ParseMode.Html);
+                                    $"Сума - {insertedRevenues[userId].Amount} ₴\n" +
+                                    $"Дата - {insertedRevenues[userId].Date.ToString("dd.MM.yyyy",culture)}";
+                        await client.EditMessageTextAsync(chatId, messageId, answer, parseMode: ParseMode.Html);
                         State.FinishCurrentCommand(userId);
                     }
                     if (update.CallbackQuery.Data == "selectDate")
                     {
-                        await client.EditMessageTextAsync(chatId, update.CallbackQuery.Message.MessageId,
+                        await client.EditMessageTextAsync(chatId, messageId,
                             $"Введіть дату в наступному форматі: <b>{DateTime.Now.ToString("dd.MM.yyyy", culture)}</b>", parseMode: ParseMode.Html);
                         State.NextStep(userId);
                     }
@@ -89,19 +82,14 @@ namespace BudgetBot.Models.Commands
             }
             if (State.GetCurrentStep(userId) == 4)
             {
-                if (DateTime.TryParse(update.Message.Text, out DateTime date))
+                if (DateTime.TryParse(update.Message.Text,culture, DateTimeStyles.AllowWhiteSpaces, out DateTime date))
                 {
                     insertedRevenues[userId].Date = date;
                     dbContext.Revenues.Update(insertedRevenues[userId]);
                     await dbContext.SaveChangesAsync();
-                    var successEmoji = new Emoji(0x2705);
-                    var answer = successEmoji + $" Дохід відредаговано:\n" +
-                        $"Категорія - {insertedRevenues[userId].Category.Name}\n" +
-                        $"Сума - {insertedRevenues[userId].Amount}$\n" +
-                        $"Дата - {insertedRevenues[userId].Date.ToShortDateString()}";
-                    var selectDateButton = Bot.MakeInlineButton($"{new Emoji(0x1F4C6)}Змінити дату", "selectDate");
-                    var cancelButton = Bot.MakeInlineButton($"{new Emoji(0x274C)}Скасувати", "cancel");
-                    await client.SendTextMessageAsync(chatId, answer, replyMarkup: Bot.MakeInlineKeyboard(selectDateButton, cancelButton));
+                    var answer = MakeAddedRevenueText(insertedRevenues[userId]);
+                    
+                    await client.SendTextMessageAsync(chatId, answer, replyMarkup: Bot.MakeDateEditKeyboard());
                     State.PreviousStep(userId);
                 }
                 else
@@ -114,6 +102,14 @@ namespace BudgetBot.Models.Commands
         private List<Revenue> userRevenues = new List<Revenue>();
 
         private Dictionary<long, Revenue> insertedRevenues = new Dictionary<long, Revenue>();
+        private string MakeAddedRevenueText(Revenue expense)
+        {
+            var successEmoji = new Emoji(0x2705);
+            return successEmoji + $" Дохід відредаговано:\n" +
+                       $"Категорія - {expense.Category.Name}\n" +
+                       $"Сума - {expense.Amount} ₴\n" +
+                       $"Дата - {expense.Date.ToString("dd.MM.yyyy", culture)}";
+        }
         private void AddRevenue(long userId, string category = "", decimal amount = default, DateTime date = default)
         {
             var record = userRevenues.Where(r => r.UserId == userId).FirstOrDefault();

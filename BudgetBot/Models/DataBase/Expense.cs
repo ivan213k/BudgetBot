@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
+using System.Globalization;
 
 namespace BudgetBot.Models.DataBase
 {
@@ -35,6 +36,11 @@ namespace BudgetBot.Models.DataBase
             : this(userId, category, amount, date)
         {
             Description = descripton;
+        }
+
+        public override string ToString()
+        {
+            return $"{Category.Emoji} {Date.ToString("dd.MM.yyyy",new CultureInfo("uk-ua"))} {Category.Name} - {Amount}₴";
         }
     }
 }

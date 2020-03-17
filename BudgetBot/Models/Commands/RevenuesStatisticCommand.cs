@@ -71,7 +71,6 @@ namespace BudgetBot.Models.Commands
                 }
             }
         }
-
         private string GetRevenueStatisticText(long userId, DateTime? startDate = null, DateTime? endDate = null)
         {
             var statisticManager = new StatisticsManager();
@@ -96,9 +95,9 @@ namespace BudgetBot.Models.Commands
             foreach (var row in revenueStatistics)
             {
                 var categoryEmoji = dbContext.GetCategoryEmoji(row.Categrory, CategoryType.Revenue);
-                answer.Append($"\t\t\t{categoryEmoji} {row.Categrory} - {row.TotalAmount} ({row.Percent}%)\n");
+                answer.Append($"\t\t\t{categoryEmoji} {row.Categrory} - {row.TotalAmount} ₴ ({row.Percent}%)\n");
             }
-            answer.Append($"Загальна сума доходів: <u><b>{totalAmount}</b></u>");
+            answer.Append($"Загальна сума доходів: <u><b>{totalAmount} ₴</b></u>");
             return answer.ToString();
         }
 
