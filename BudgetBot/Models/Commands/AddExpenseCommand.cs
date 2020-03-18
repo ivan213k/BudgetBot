@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Telegram.Bot;
 using Telegram.Bot.Types;
@@ -32,18 +33,19 @@ namespace BudgetBot.Models.Command
             if (GetCurrentStep(userId) == 1)
             {
                 AddExpense(userId, category: update.CallbackQuery.Data);
-                await client.SendTextMessageAsync(chatId,"Введіть суму витрати");
+                await client.SendTextMessageAsync(chatId,"Введіть суму витрати наприклад:" +
+                    "\n<b>300</b> або <b>300 опис витрати</b>", ParseMode.Html);
                 NextStep(userId);
                 return;
             }
             if (GetCurrentStep(userId) == 2)
             {
-                if (!decimal.TryParse(update.Message.Text,out decimal amount))
+                if (!TryParseAmountWithDescription(update.Message.Text,out decimal amount, out string description))
                 {
                     await client.SendTextMessageAsync(chatId, "Упс... введіть суму витрати");
                     return;
                 }
-                AddExpense(userId, amount: amount, date: DateTime.Now);
+                AddExpense(userId, amount: amount, date: DateTime.Now, description: description);
                 var expense = userExpenses.Where(r=>r.UserId == userId).Single();
                 
                 var successEmoji = new Emoji(0x2705);
@@ -87,7 +89,7 @@ namespace BudgetBot.Models.Command
                     insertedExpense[userId].Date = date;
                     dbContext.Expenses.Update(insertedExpense[userId]);
                     await dbContext.SaveChangesAsync();
-                    var answer = MakeAddedExpenseText(insertedExpense[userId]);
+                    var answer = MakeAddedExpenseText(insertedExpense[userId]).Replace("додано","відредаговано");
 
                     await client.SendTextMessageAsync(chatId, answer, replyMarkup: Bot.MakeDateEditKeyboard());
                     PreviousStep(userId);
@@ -106,10 +108,33 @@ namespace BudgetBot.Models.Command
         private string MakeAddedExpenseText(Expense expense)
         {
             var successEmoji = new Emoji(0x2705);
-            return successEmoji + $" Витрату відредаговано:\n" +
+            return successEmoji + $" Витрату додано:\n" +
                        $"Категорія - {expense.Category.Name}\n" +
                        $"Сума - {expense.Amount} ₴\n" +
                        $"Дата - {expense.Date.ToString("dd.MM.yyyy", culture)}";
+        }
+
+        private bool TryParseAmountWithDescription(string text, out decimal amount, out string description)
+        {
+            description = "";
+            if (decimal.TryParse(text,out amount))
+            {
+                return true;
+            }
+            else
+            {
+                string pattern = @"\d+(\.\d+)?";
+                if (Regex.IsMatch(text, pattern))
+                {
+                    var strs = Regex.Match(text, pattern);
+                    if (decimal.TryParse(strs.Value,out amount))
+                    {
+                        description  = text.Replace(strs.Value,"");
+                        return true;
+                    }
+                }
+            }
+            return false;
         }
         private void AddInsertedExpense(long userId, Expense expense)
         {
@@ -122,7 +147,7 @@ namespace BudgetBot.Models.Command
                 insertedExpense.Add(userId, expense);
             }
         }
-        private void AddExpense(long userId, string category = "", decimal amount = default, DateTime date = default)
+        private void AddExpense(long userId, string category = "", decimal amount = default, DateTime date = default, string description = "")
         {
             var record = userExpenses.Where(r => r.UserId == userId).FirstOrDefault();
             if (record != null)
@@ -139,10 +164,14 @@ namespace BudgetBot.Models.Command
                 {
                     record.Date = date;
                 }
+                if (description!="")
+                {
+                    record.Description = description;
+                }
             }
             else
             {
-                userExpenses.Add(new Expense(userId, dbContext.GetCategory(userId, category, CategoryType.Expense), amount, date));
+                userExpenses.Add(new Expense(userId, dbContext.GetCategory(userId, category, CategoryType.Expense), amount, date,description));
             }
         }
     }

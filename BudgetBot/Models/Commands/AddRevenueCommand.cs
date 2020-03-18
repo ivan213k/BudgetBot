@@ -87,7 +87,7 @@ namespace BudgetBot.Models.Commands
                     insertedRevenues[userId].Date = date;
                     dbContext.Revenues.Update(insertedRevenues[userId]);
                     await dbContext.SaveChangesAsync();
-                    var answer = MakeAddedRevenueText(insertedRevenues[userId]);
+                    var answer = MakeAddedRevenueText(insertedRevenues[userId]).Replace("додано","відредаговано");
                     
                     await client.SendTextMessageAsync(chatId, answer, replyMarkup: Bot.MakeDateEditKeyboard());
                     State.PreviousStep(userId);
@@ -105,7 +105,7 @@ namespace BudgetBot.Models.Commands
         private string MakeAddedRevenueText(Revenue expense)
         {
             var successEmoji = new Emoji(0x2705);
-            return successEmoji + $" Дохід відредаговано:\n" +
+            return successEmoji + $" Дохід додано:\n" +
                        $"Категорія - {expense.Category.Name}\n" +
                        $"Сума - {expense.Amount} ₴\n" +
                        $"Дата - {expense.Date.ToString("dd.MM.yyyy", culture)}";

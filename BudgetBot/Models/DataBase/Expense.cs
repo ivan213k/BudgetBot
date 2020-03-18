@@ -40,7 +40,16 @@ namespace BudgetBot.Models.DataBase
 
         public override string ToString()
         {
-            return $"{Category.Emoji} {Date.ToString("dd.MM.yyyy",new CultureInfo("uk-ua"))} {Category.Name} - {Amount}₴";
+            string expense = "";
+            if (string.IsNullOrWhiteSpace(Description))
+            {
+                expense = $"{Category.Emoji} {Date.ToString("dd.MM.yyyy", new CultureInfo("uk-ua"))} {Category.Name} - {Amount}₴";
+            }
+            else
+            {
+                expense = $"{Category.Emoji} {Date.ToString("dd.MM.yyyy", new CultureInfo("uk-ua"))} {Description} - {Amount}₴";
+            }
+            return expense;
         }
     }
 }
