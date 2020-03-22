@@ -83,6 +83,11 @@ namespace BudgetBot.Models.Commands
             {
                 if (DateTime.TryParse(update.Message.Text,culture, DateTimeStyles.AllowWhiteSpaces, out DateTime date))
                 {
+                    if (date > DateTime.Now)
+                    {
+                        await client.SendTextMessageAsync(chatId, "Упс... дата з майбутнього, спробуйте ще раз");
+                        return;
+                    }
                     insertedRevenues[userId].Date = date;
                     dbContext.Revenues.Update(insertedRevenues[userId]);
                     await dbContext.SaveChangesAsync();

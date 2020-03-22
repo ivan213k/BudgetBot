@@ -84,6 +84,13 @@ namespace BudgetBot.Models
             var cancelButton = MakeInlineButton($"{new Emoji(0x274C)}Скасувати", "cancel");
             return MakeInlineKeyboard(selectDateButton,cancelButton);
         }
+
+        public static InlineKeyboardMarkup MakeYesNoKeyboard()
+        {
+            var yesButton = MakeInlineButton("Так","yes");
+            var noButton = MakeInlineButton("Ні", "no");
+            return MakeInlineKeyboard(yesButton, noButton);
+        }
         public static bool HasCommand(string commandName)
         {
             return _commands.Any(command => command.Name == commandName);

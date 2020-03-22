@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace BudgetBot.Models.DataBase
 {
@@ -71,6 +72,14 @@ namespace BudgetBot.Models.DataBase
         {
             return Revenues.Where(r => r.UserId == userId
             &&(r.Date >= startDate && r.Date <= endDate)).Include(r => r.Category).ToList();
+        }
+
+        public async Task DeleteAllRecords(long userId)
+        {
+            Expenses.RemoveRange(Expenses.Where(r=>r.UserId==userId));
+            Revenues.RemoveRange(Revenues.Where(r=>r.UserId==userId));
+            Categories.RemoveRange(Categories.Where(r=>!r.IsStandardCategory&&r.UserId==userId));
+            await SaveChangesAsync();
         }
     }
 }
