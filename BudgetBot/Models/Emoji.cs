@@ -1,18 +1,16 @@
-﻿using System;
-
-namespace BudgetBot.Models
+﻿namespace BudgetBot.Models
 {
     public class Emoji
     {
-        readonly int code;
+        private readonly int _code;
         public Emoji(int code)
         {
-            this.code = code;
+            _code = code;
         }
 
         public override string ToString()
         {
-            return Char.ConvertFromUtf32(code);
+            return char.ConvertFromUtf32(_code);
         }
     }
 }

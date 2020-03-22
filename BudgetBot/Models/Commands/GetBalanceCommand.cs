@@ -1,67 +1,66 @@
-﻿using BudgetBot.Models.Command;
-using BudgetBot.Models.Statistics;
+﻿using BudgetBot.Models.Statistics;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Threading.Tasks;
+using BudgetBot.Models.StateData;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
-using static BudgetBot.Models.StateData.State;
 
 namespace BudgetBot.Models.Commands
 {
-    public class GetBalanceCommand : BaseCommand
+    public class GetBalanceCommand : Command
     {
         public override string Name { get => "/balance"; }
 
-        private IFormatProvider culture = new CultureInfo("Uk-ua");
+        private readonly IFormatProvider _culture = new CultureInfo("Uk-ua");
         public override async Task Execute(Update update, TelegramBotClient client)
         {
             var userId = GetUserId(update);
             var chatId = GetChatId(update);
             var messageId = GetMessageId(update);
-            if (GetCurrentStep(userId) == 0)
+            if (StateMachine.GetCurrentStep(userId) == 0)
             { 
                 var answer = GetBalanceText(userId);
                 await client.SendTextMessageAsync(chatId, answer, replyMarkup: Bot.MakeDateSwichKeyboard(), parseMode:ParseMode.Html);
-                NextStep(userId);
+                StateMachine.NextStep(userId);
                 return;
             }
-            if (GetCurrentStep(userId) == 1)
+            if (StateMachine.GetCurrentStep(userId) == 1)
             {
                 if (update.Type == UpdateType.CallbackQuery)
                 {
                     SetCurrentDate(userId);
-                    if (update.CallbackQuery.Data == "left")
+                    switch (update.CallbackQuery.Data)
                     {
-                        PreviousMonth(userId);
-                        var startDate = new DateTime(currentDates[userId].Year, currentDates[userId].Month, 01);
-                        var endDate = startDate.AddMonths(1).AddDays(-1);
-                        var answer = GetBalanceText(userId, startDate, endDate);
-                        await client.EditMessageTextAsync(chatId, messageId, answer, parseMode: ParseMode.Html, replyMarkup: Bot.MakeDateSwichKeyboard());
-                        return;
-                    }
-                    if (update.CallbackQuery.Data == "right")
-                    {
-                        if (currentDates[userId].Date.AddMonths(1) > DateTime.Now.AddMonths(1))
+                        case "left":
                         {
+                            PreviousMonth(userId);
+                            var startDate = new DateTime(_currentDates[userId].Year, _currentDates[userId].Month, 01);
+                            var endDate = startDate.AddMonths(1).AddDays(-1);
+                            var answer = GetBalanceText(userId, startDate, endDate);
+                            await client.EditMessageTextAsync(chatId, messageId, answer, parseMode: ParseMode.Html, replyMarkup: Bot.MakeDateSwichKeyboard());
                             return;
                         }
-                        if (currentDates[userId].Date.AddMonths(1) > DateTime.Now)
+                        case "right" when _currentDates[userId].Date.AddMonths(1) > DateTime.Now.AddMonths(1):
+                            return;
+                        case "right" when _currentDates[userId].Date.AddMonths(1) > DateTime.Now:
                         {
                             var answer = GetBalanceText(userId);
-                            await client.EditMessageTextAsync(chatId, messageId, answer, parseMode: ParseMode.Html, replyMarkup: Bot.MakeDateSwichKeyboard());
+                            await client.EditMessageTextAsync(chatId, messageId, answer, ParseMode.Html, replyMarkup: Bot.MakeDateSwichKeyboard());
                             NextMonth(userId);
+                            break;
                         }
-                        else
+                        case "right":
                         {
                             NextMonth(userId);
-                            var startDate = new DateTime(currentDates[userId].Year, currentDates[userId].Month, 01);
+                            var startDate = new DateTime(_currentDates[userId].Year, _currentDates[userId].Month, 01);
                             var endDate = startDate.AddMonths(1).AddDays(-1);
                        
                             var answer = GetBalanceText(userId, startDate, endDate);
-                            await client.EditMessageTextAsync(chatId, messageId, answer, parseMode: ParseMode.Html, replyMarkup: Bot.MakeDateSwichKeyboard());
+                            await client.EditMessageTextAsync(chatId, messageId, answer, ParseMode.Html, replyMarkup: Bot.MakeDateSwichKeyboard());
+                            break;
                         }
                     }
                 }
@@ -76,7 +75,7 @@ namespace BudgetBot.Models.Commands
             string period;
             var statisticManager = new StatisticsManager();
             decimal totalAmountOfRevenues, totalAmountOfExpenses;
-            if (startDate== null || endDate == null)
+            if (startDate == null || endDate == null)
             {
                 totalAmountOfRevenues = statisticManager.GetTotalAmountOfRevenues(userId);
                 totalAmountOfExpenses = statisticManager.GetTotalAmountOfExpenses(userId);
@@ -86,8 +85,8 @@ namespace BudgetBot.Models.Commands
             {
                 totalAmountOfRevenues = statisticManager.GetTotalAmountOfRevenues(userId,startDate.Value,endDate.Value);
                 totalAmountOfExpenses = statisticManager.GetTotalAmountOfExpenses(userId, startDate.Value, endDate.Value);
-                period = startDate.Value.Year < DateTime.Now.Year ? startDate.Value.ToString("MMMM", culture) + " " + startDate.Value.Year
-                    : startDate.Value.ToString("MMMM", culture);
+                period = startDate.Value.Year < DateTime.Now.Year ? startDate.Value.ToString("MMMM", _culture) + " " + startDate.Value.Year
+                    : startDate.Value.ToString("MMMM", _culture);
             }
             return $"{chartEmoji} Баланс за <u><b>{period}</b></u> \n" +
                    $"Загальна сума доходів {upChart} - {totalAmountOfRevenues} ₴\n\n" +
@@ -96,23 +95,23 @@ namespace BudgetBot.Models.Commands
                    $"Баланс\t\t {totalAmountOfRevenues - totalAmountOfExpenses} ₴";
         }
 
-        private Dictionary<long, DateTime> currentDates = new Dictionary<long, DateTime>();
+        private readonly Dictionary<long, DateTime> _currentDates = new Dictionary<long, DateTime>();
         private void NextMonth(long userId)
         {
-            if (currentDates[userId].Date.AddMonths(1) <= DateTime.Now.AddMonths(1))
+            if (_currentDates[userId].Date.AddMonths(1) <= DateTime.Now.AddMonths(1))
             {
-                currentDates[userId] = currentDates[userId].Date.AddMonths(1);
+                _currentDates[userId] = _currentDates[userId].Date.AddMonths(1);
             }
         }
         private void PreviousMonth(long userId)
         {
-            currentDates[userId] = currentDates[userId].Date.AddMonths(-1);
+            _currentDates[userId] = _currentDates[userId].Date.AddMonths(-1);
         }
         private void SetCurrentDate(long userId)
         {
-            if (!currentDates.ContainsKey(userId))
+            if (!_currentDates.ContainsKey(userId))
             {
-                currentDates.Add(userId, new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day).AddMonths(1));
+                _currentDates.Add(userId, new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day).AddMonths(1));
             }
         }
     }

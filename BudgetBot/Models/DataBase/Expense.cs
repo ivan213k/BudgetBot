@@ -29,18 +29,18 @@ namespace BudgetBot.Models.DataBase
         {
             UserId = userId;
             Category = category;
-            Amount = Amount;
-            Date = Date;
+            Amount = amount;
+            Date = date;
         }
-        public Expense(long userId, Category category, decimal amount, DateTime date, string descripton)
+        public Expense(long userId, Category category, decimal amount, DateTime date, string description)
             : this(userId, category, amount, date)
         {
-            Description = descripton;
+            Description = description;
         }
 
         public override string ToString()
         {
-            string expense = "";
+            string expense;
             if (string.IsNullOrWhiteSpace(Description))
             {
                 expense = $"{Category.Emoji} {Date.ToString("dd.MM.yyyy", new CultureInfo("uk-ua"))} {Category.Name} - {Amount}₴";

@@ -20,13 +20,12 @@ namespace BudgetBot.Controllers
                 var userId = update.Message.From.Id;
                 if (Bot.HasCommand(update.Message.Text))
                 {
-                    State.AddCurrentCommand(userId, update.Message.Text);
-                    await commands.Where(r => r.Name == update.Message.Text).Single().Execute(update, client);
+                    StateMachine.AddCurrentCommand(userId, update.Message.Text);
+                    await commands.Single(r => r.Name == update.Message.Text).Execute(update, client);
                 }
-                else if (State.GetCurrentCommand(userId)!=null)
+                else if (StateMachine.GetCurrentCommand(userId)!=null)
                 {
-                    await commands.Where(r => r.Name == State.GetCurrentCommand(userId)).
-                        Single().Execute(update, client);
+                    await commands.Single(r => r.Name == StateMachine.GetCurrentCommand(userId)).Execute(update, client);
                 }
                 else
                 {
@@ -36,14 +35,12 @@ namespace BudgetBot.Controllers
             if (update.Type == UpdateType.CallbackQuery)
             {
                 var userId = update.CallbackQuery.From.Id;
-                var command = commands.Where(r => r.Name == State.GetCurrentCommand(userId)).FirstOrDefault();
+                var command = commands.FirstOrDefault(r => r.Name == StateMachine.GetCurrentCommand(userId));
                 if (command!=null)
                 {
                     await command.Execute(update,client);
                 }
-
             }
-          
             return Ok();
         }
     }

@@ -1,5 +1,4 @@
-﻿using BudgetBot.Models.Command;
-using BudgetBot.Models.DataBase;
+﻿using BudgetBot.Models.DataBase;
 using BudgetBot.Models.StateData;
 using System;
 using System.Collections.Generic;
@@ -12,7 +11,7 @@ using Telegram.Bot.Types.Enums;
 
 namespace BudgetBot.Models.Commands
 {
-    public class AddRevenueCommand : BaseCommand
+    public class AddRevenueCommand : Command
     {
         public override string Name { get => "/addrevenue"; }
 
@@ -24,20 +23,20 @@ namespace BudgetBot.Models.Commands
             var userId = GetUserId(update);
             var chatId = GetChatId(update);
             var messageId = GetMessageId(update);
-            if (State.GetCurrentStep(userId) == 0)
+            if (StateMachine.GetCurrentStep(userId) == 0)
             {
                 await Bot.SendCategories(update.Message,"Виберіть категорію доходу\t", CategoryType.Revenue);
-                State.NextStep(userId);
+                StateMachine.NextStep(userId);
                 return;
             }
-            if (State.GetCurrentStep(userId) == 1)
+            if (StateMachine.GetCurrentStep(userId) == 1)
             {
                 AddRevenue(userId,category: update.CallbackQuery.Data);
                 await client.SendTextMessageAsync(chatId,"Введіть суму доходу");
-                State.NextStep(userId);
+                StateMachine.NextStep(userId);
                 return;
             }
-            if (State.GetCurrentStep(userId) == 2)
+            if (StateMachine.GetCurrentStep(userId) == 2)
             {
                 if (!decimal.TryParse(update.Message.Text, out decimal amount))
                 {
@@ -46,7 +45,7 @@ namespace BudgetBot.Models.Commands
                 }
                 AddRevenue(userId, amount: amount, date: DateTime.Now);
 
-                var revenue = userRevenues.Where(r => r.UserId == userId).Single();
+                var revenue = userRevenues.Single(r => r.UserId == userId);
                 var answer = MakeAddedRevenueText(revenue);
 
                 await client.SendTextMessageAsync(chatId, answer, replyMarkup:Bot.MakeDateEditKeyboard());
@@ -55,9 +54,9 @@ namespace BudgetBot.Models.Commands
                 AddInsertedRevenue(userId, insertedRevenue);
                 await dbContext.SaveChangesAsync();
                 userRevenues.Remove(revenue);
-                State.NextStep(userId);
+                StateMachine.NextStep(userId);
             }
-            if (State.GetCurrentStep(userId) == 3)
+            if (StateMachine.GetCurrentStep(userId) == 3)
             {
                 if (update.Type == UpdateType.CallbackQuery)
                 {
@@ -70,17 +69,17 @@ namespace BudgetBot.Models.Commands
                                     $"Сума - {insertedRevenues[userId].Amount} ₴\n" +
                                     $"Дата - {insertedRevenues[userId].Date.ToString("dd.MM.yyyy",culture)}";
                         await client.EditMessageTextAsync(chatId, messageId, answer, parseMode: ParseMode.Html);
-                        State.FinishCurrentCommand(userId);
+                        StateMachine.FinishCurrentCommand(userId);
                     }
                     if (update.CallbackQuery.Data == "selectDate")
                     {
                         await client.EditMessageTextAsync(chatId, messageId,
                             $"Введіть дату в наступному форматі: <b>{DateTime.Now.ToString("dd.MM.yyyy", culture)}</b>", parseMode: ParseMode.Html);
-                        State.NextStep(userId);
+                        StateMachine.NextStep(userId);
                     }
                 }
             }
-            if (State.GetCurrentStep(userId) == 4)
+            if (StateMachine.GetCurrentStep(userId) == 4)
             {
                 if (DateTime.TryParse(update.Message.Text,culture, DateTimeStyles.AllowWhiteSpaces, out DateTime date))
                 {
@@ -90,7 +89,7 @@ namespace BudgetBot.Models.Commands
                     var answer = MakeAddedRevenueText(insertedRevenues[userId]).Replace("додано","відредаговано");
                     
                     await client.SendTextMessageAsync(chatId, answer, replyMarkup: Bot.MakeDateEditKeyboard());
-                    State.PreviousStep(userId);
+                    StateMachine.PreviousStep(userId);
                 }
                 else
                 {

@@ -1,71 +1,70 @@
-﻿using BudgetBot.Models.Command;
-using BudgetBot.Models.DataBase;
+﻿using BudgetBot.Models.DataBase;
 using BudgetBot.Models.Statistics;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
 using System.Threading.Tasks;
+using BudgetBot.Models.StateData;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
-using static BudgetBot.Models.StateData.State;
 
 namespace BudgetBot.Models.Commands
 {
-    public class RevenuesStatisticCommand : BaseCommand
+    public class RevenuesStatisticCommand : Command
     {
         public override string Name { get => "/getrevenuestat"; }
 
-        private BotDbContext dbContext = new BotDbContext();
+        private readonly BotDbContext _dbContext = new BotDbContext();
 
-        private IFormatProvider culture = new CultureInfo("Uk-ua");
+        private readonly IFormatProvider _culture = new CultureInfo("Uk-ua");
 
         public override async Task Execute(Update update, TelegramBotClient client)
         {
             var userId = GetUserId(update);
             var chatId = GetChatId(update);
             var messageId = GetMessageId(update);
-            if (GetCurrentStep(userId) == 0)
+            if (StateMachine.GetCurrentStep(userId) == 0)
             {
                 var answer = GetRevenueStatisticText(userId);
                 await client.SendTextMessageAsync(chatId, answer, ParseMode.Html, replyMarkup: Bot.MakeDateSwichKeyboard());
-                NextStep(userId);
+                StateMachine.NextStep(userId);
                 return;
             }
-            if (GetCurrentStep(userId) == 1)
+            if (StateMachine.GetCurrentStep(userId) == 1)
             {
                 if (update.Type == UpdateType.CallbackQuery)
                 {
                     SetCurrentDate(userId);
-                    if (update.CallbackQuery.Data == "left")
+                    switch (update.CallbackQuery.Data)
                     {
-                        PreviousMonth(userId);
-                        var startDate = new DateTime(currentDates[userId].Year, currentDates[userId].Month, 01);
-                        var endDate = startDate.AddMonths(1).AddDays(-1);
-                        var answer = GetRevenueStatisticText(userId, startDate, endDate);
-                        await client.EditMessageTextAsync(chatId, messageId, answer, parseMode: ParseMode.Html, replyMarkup: Bot.MakeDateSwichKeyboard());
-                        return;
-                    }
-                    if (update.CallbackQuery.Data == "right")
-                    {
-                        if (currentDates[userId].Date.AddMonths(1) > DateTime.Now.AddMonths(1))
+                        case "left":
                         {
+                            PreviousMonth(userId);
+                            var startDate = new DateTime(_currentDates[userId].Year, _currentDates[userId].Month, 01);
+                            var endDate = startDate.AddMonths(1).AddDays(-1);
+                            var answer = GetRevenueStatisticText(userId, startDate, endDate);
+                            await client.EditMessageTextAsync(chatId, messageId, answer, parseMode: ParseMode.Html, replyMarkup: Bot.MakeDateSwichKeyboard());
                             return;
                         }
-                        if (currentDates[userId].Date.AddMonths(1) > DateTime.Now)
+                        case "right" when _currentDates[userId].Date.AddMonths(1) > DateTime.Now.AddMonths(1):
+                            return;
+                        case "right" when _currentDates[userId].Date.AddMonths(1) > DateTime.Now:
                         {
                             var answer = GetRevenueStatisticText(userId);
                             await client.EditMessageTextAsync(chatId, messageId, answer, parseMode: ParseMode.Html, replyMarkup: Bot.MakeDateSwichKeyboard());
                             NextMonth(userId);
+                            break;
                         }
-                        else
+                        case "right":
                         {
                             NextMonth(userId);
-                            var startDate = new DateTime(currentDates[userId].Year, currentDates[userId].Month, 01);
+                            var startDate = new DateTime(_currentDates[userId].Year, _currentDates[userId].Month, 01);
                             var endDate = startDate.AddMonths(1).AddDays(-1);
                             var answer = GetRevenueStatisticText(userId, startDate, endDate);
                             await client.EditMessageTextAsync(chatId, messageId, answer, parseMode: ParseMode.Html, replyMarkup: Bot.MakeDateSwichKeyboard());
+                            break;
                         }
                     }
                 }
@@ -87,37 +86,37 @@ namespace BudgetBot.Models.Commands
             {
                 revenueStatistics = statisticManager.GetRevenuesStatistic(userId, startDate.Value, endDate.Value);
                 totalAmount = statisticManager.GetTotalAmountOfRevenues(userId, startDate.Value, endDate.Value);
-                period = startDate.Value.Year < DateTime.Now.Year ? startDate.Value.ToString("MMMM", culture) + " " + startDate.Value.Year
-                    : startDate.Value.ToString("MMMM", culture);
+                period = startDate.Value.Year < DateTime.Now.Year ? startDate.Value.ToString("MMMM", _culture) + " " + startDate.Value.Year
+                    : startDate.Value.ToString("MMMM", _culture);
             }
             var topChart = new Emoji(0x1F4C8);
             StringBuilder answer = new StringBuilder($"{topChart} Статистика доходів по категоріям за <b>{period}</b>:\n");
             foreach (var row in revenueStatistics)
             {
-                var categoryEmoji = dbContext.GetCategoryEmoji(row.Categrory, CategoryType.Revenue);
-                answer.Append($"\t\t\t{categoryEmoji} {row.Categrory} - {row.TotalAmount} ₴ ({row.Percent}%)\n");
+                var categoryEmoji = _dbContext.GetCategoryEmoji(row.Category, CategoryType.Revenue);
+                answer.Append($"\t\t\t{categoryEmoji} {row.Category} - {row.TotalAmount} ₴ ({row.Percent}%)\n");
             }
             answer.Append($"Загальна сума доходів: <u><b>{totalAmount} ₴</b></u>");
             return answer.ToString();
         }
 
-        private Dictionary<long, DateTime> currentDates = new Dictionary<long, DateTime>();
+        private readonly Dictionary<long, DateTime> _currentDates = new Dictionary<long, DateTime>();
         private void NextMonth(long userId)
         {
-            if (currentDates[userId].Date.AddMonths(1) <= DateTime.Now.AddMonths(1))
+            if (_currentDates[userId].Date.AddMonths(1) <= DateTime.Now.AddMonths(1))
             {
-                currentDates[userId] = currentDates[userId].Date.AddMonths(1);
+                _currentDates[userId] = _currentDates[userId].Date.AddMonths(1);
             }
         }
         private void PreviousMonth(long userId)
         {
-            currentDates[userId] = currentDates[userId].Date.AddMonths(-1);
+            _currentDates[userId] = _currentDates[userId].Date.AddMonths(-1);
         }
         private void SetCurrentDate(long userId)
         {
-            if (!currentDates.ContainsKey(userId))
+            if (!_currentDates.ContainsKey(userId))
             {
-                currentDates.Add(userId, new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day).AddMonths(1));
+                _currentDates.Add(userId, new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day).AddMonths(1));
             }
         }
     }

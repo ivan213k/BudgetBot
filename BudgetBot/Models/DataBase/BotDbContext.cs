@@ -6,7 +6,7 @@ using System.Linq;
 
 namespace BudgetBot.Models.DataBase
 {
-    public class BotDbContext : DbContext
+    public sealed class BotDbContext : DbContext
     {
         public DbSet<Category> Categories { get; set; }
 
@@ -17,17 +17,10 @@ namespace BudgetBot.Models.DataBase
         {
             Database.EnsureCreated();
         }
-        public BotDbContext(DbContextOptions<BotDbContext> options)
-            : base(options)
-        {
-            
-           Database.EnsureCreated();
-        }
-
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             var builder = new ConfigurationBuilder();
-            builder.AddJsonFile("dbsettings.json");
+            builder.AddJsonFile("botsettings.json");
             var config = builder.Build();
             #if DEBUG
             optionsBuilder.UseSqlServer(config.GetConnectionString("LocalConnection"));
@@ -44,30 +37,19 @@ namespace BudgetBot.Models.DataBase
 
         public Category GetCategory(long userId, string name, CategoryType categoryType)
         {
-            return GetCategories(userId, categoryType).Where(r => r.Name == name).Single();
+            return GetCategories(userId, categoryType).Single(r => r.Name == name);
         }
 
         public string GetCategoryEmoji(string categoryName, CategoryType categoryType)
         {
-            var category = Categories.Where(r => r.Name == categoryName && r.CategoryType == categoryType).FirstOrDefault();
-            if (category == null)
-            {
-                return "";
-            }
-            return category.GetImage();
+            var category = Categories.FirstOrDefault(r => r.Name == categoryName && r.CategoryType == categoryType);
+            return category == null ? "" : category.GetImage();
         }
 
         public bool ContainsCategory(long userId, string categoryName, CategoryType categoryType)
         {
             var userCategories = GetCategories(userId, categoryType);
-            foreach (var category in userCategories)
-            {
-                if (category.Name.ToLower() == categoryName.ToLower())
-                {
-                    return true;
-                }
-            }
-            return false;
+            return userCategories.Any(category => string.Equals(category.Name, categoryName, StringComparison.CurrentCultureIgnoreCase));
         }
 
         public List<Expense> GetExpenses(long userId)

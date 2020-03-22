@@ -2,15 +2,15 @@
 {
     public class RevenueStatistic
     {
-        public string Categrory { get; set; }
+        public string Category { get; set; }
 
         public decimal TotalAmount { get; set; }
 
         public decimal Percent { get; set; }
 
-        public RevenueStatistic(string categry, decimal totalAmount, decimal percent)
+        public RevenueStatistic(string category, decimal totalAmount, decimal percent)
         {
-            Categrory = categry;
+            Category = category;
             TotalAmount = totalAmount;
             Percent = percent;
         }

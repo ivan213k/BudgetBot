@@ -1,11 +1,10 @@
-﻿using System.Collections.Generic;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 
-namespace BudgetBot.Models.Command
+namespace BudgetBot.Models.Commands
 {
-    public abstract class BaseCommand
+    public abstract class Command
     {
         public abstract string Name { get; }
 
@@ -13,29 +12,17 @@ namespace BudgetBot.Models.Command
 
         protected long GetUserId(Update update)
         {
-            if (update.Message != null)
-            {
-                return update.Message.From.Id;
-            }
-            return update.CallbackQuery.From.Id;
+            return update.Message?.From.Id ?? update.CallbackQuery.From.Id;
         }
 
         protected long GetChatId(Update update)
         {
-            if (update.Message!=null)
-            {
-                return update.Message.Chat.Id;
-            }
-            return update.CallbackQuery.Message.Chat.Id;
+            return update.Message?.Chat.Id ?? update.CallbackQuery.Message.Chat.Id;
         }
 
         protected int GetMessageId(Update update)
         {
-            if (update.Message!=null)
-            {
-                return update.Message.MessageId;
-            }
-            return update.CallbackQuery.Message.MessageId;
+            return update.Message?.MessageId ?? update.CallbackQuery.Message.MessageId;
         }
     }
 }

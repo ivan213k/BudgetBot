@@ -34,11 +34,7 @@ namespace BudgetBot.Models.DataBase
         public string Emoji { get; set; }
         public string GetImage()
         {
-            if (Emoji != null)
-            {
-                return Emoji;
-            }
-            return "";
+            return Emoji ?? "";
         }
     }
 }

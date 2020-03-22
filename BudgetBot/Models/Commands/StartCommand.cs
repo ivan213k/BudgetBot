@@ -1,12 +1,11 @@
 ﻿using System.Threading.Tasks;
-using BudgetBot.Models.Command;
+using BudgetBot.Models.StateData;
 using Telegram.Bot.Types;
 using Telegram.Bot;
-using static BudgetBot.Models.StateData.State;
 
 namespace BudgetBot.Models.Commands
 {
-    public class StartCommand : BaseCommand
+    public class StartCommand : Command
     {
         public override string Name { get => "/start"; }
 
@@ -23,11 +22,12 @@ namespace BudgetBot.Models.Commands
                 "/addexpense - додати витрату\n" +
                 "/addrevenue - додати дохід\n" +
                 "/getexpensestat - статистика витрат\n" +
+                "/expenseslist - список витрат\n" +
                 "/getrevenuestat - статистика доходів\n" +
                 "/balance - баланс\n" +
-                "/addcategory - додати категорію витрат чи доходів"; ;
+                "/addcategory - додати категорію витрат чи доходів";
             await client.SendTextMessageAsync(chatId, answer);
-            FinishCurrentCommand(GetUserId(update));
+            StateMachine.FinishCurrentCommand(GetUserId(update));
         }
     }
 }

@@ -1,5 +1,4 @@
-﻿using BudgetBot.Models.Command;
-using BudgetBot.Models.DataBase;
+﻿using BudgetBot.Models.DataBase;
 using BudgetBot.Models.Statistics;
 using System;
 using System.Collections.Generic;
@@ -9,11 +8,11 @@ using System.Threading.Tasks;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
-using static BudgetBot.Models.StateData.State;
+using static BudgetBot.Models.StateData.StateMachine;
 
 namespace BudgetBot.Models.Commands
 {
-    public class ExpensesStatisticCommand : BaseCommand
+    public class ExpensesStatisticCommand : Command
     {
         public override string Name { get => "/getexpensestat"; }
 
@@ -96,8 +95,8 @@ namespace BudgetBot.Models.Commands
             StringBuilder answer = new StringBuilder($"{downChart} Статистика витрат по категоріям за <b>{period}</b>:\n");
             foreach (var row in expenseStatistics)
             {
-                var categoryEmoji = dbContext.GetCategoryEmoji(row.Categrory, CategoryType.Expense);
-                answer.Append($"\t\t\t{categoryEmoji} {row.Categrory} - {row.TotalAmount} ₴ ({row.Percent}%)\n");
+                var categoryEmoji = dbContext.GetCategoryEmoji(row.Category, CategoryType.Expense);
+                answer.Append($"\t\t\t{categoryEmoji} {row.Category} - {row.TotalAmount} ₴ ({row.Percent}%)\n");
             }
             answer.Append($"Загальна сума витрат: <u><b>{totalAmount} ₴</b></u>");
             return answer.ToString();
