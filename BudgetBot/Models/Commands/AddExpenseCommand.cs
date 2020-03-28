@@ -33,7 +33,7 @@ namespace BudgetBot.Models.Commands
             if (StateMachine.GetCurrentStep(userId) == 1)
             {
                 AddExpense(userId, category: update.CallbackQuery.Data);
-                await client.SendTextMessageAsync(chatId, "Введіть суму витрати наприклад:" +
+                await client.EditMessageTextAsync(chatId, messageId,"Введіть суму витрати наприклад:" +
                     "\n<b>300</b> або <b>300 опис витрати</b>", ParseMode.Html);
                 StateMachine.NextStep(userId);
                 return;
@@ -121,7 +121,7 @@ namespace BudgetBot.Models.Commands
         private bool TryParseAmountWithDescription(string text, out decimal amount, out string description)
         {
             description = "";
-            if (decimal.TryParse(text, out amount))
+            if (decimal.TryParse(text,NumberStyles.Any, _culture ,out amount))
             {
                 return true;
             }
@@ -129,7 +129,7 @@ namespace BudgetBot.Models.Commands
             if (Regex.IsMatch(text, pattern))
             {
                 var strs = Regex.Match(text, pattern);
-                if (decimal.TryParse(strs.Value, out amount))
+                if (decimal.TryParse(strs.Value, NumberStyles.Any, _culture, out amount))
                 {
                     description = text.Replace(strs.Value, "");
                     return true;
