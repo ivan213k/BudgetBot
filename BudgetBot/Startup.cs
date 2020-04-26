@@ -54,7 +54,8 @@ namespace BudgetBot
                     name: "default",
                     template: "{controller=Home}/{action=Index}/{id?}");
             });
-            Bot.Get();
+            
+            Bot.Get().Wait();
         }
     }
 }
