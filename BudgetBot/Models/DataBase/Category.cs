@@ -15,6 +15,14 @@ namespace BudgetBot.Models.DataBase
             IsStandardCategory = isStandard;
             CategoryType = type;
         }
+        public Category(int id, string name, bool isStandard, CategoryType type, Emoji image = null)
+        {
+            Id = id;
+            Name = name;
+            Emoji = image?.ToString();
+            IsStandardCategory = isStandard;
+            CategoryType = type;
+        }
         public Category(long userId, string name, CategoryType type, bool isStandard = false, Emoji image = null)
             : this(name, isStandard, type, image)
         {

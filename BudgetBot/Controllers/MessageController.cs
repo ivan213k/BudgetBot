@@ -11,6 +11,7 @@ namespace BudgetBot.Controllers
     public class MessageController : Controller
     {
         [Route("api/message/update")]
+        [HttpPost]
         public async Task<OkResult> Update([FromBody]Update update)
         {
             var commands = Bot.Commands;
@@ -23,22 +24,22 @@ namespace BudgetBot.Controllers
                     StateMachine.AddCurrentCommand(userId, update.Message.Text);
                     await commands.Single(r => r.Name == update.Message.Text).Execute(update, client);
                 }
-                else if (StateMachine.GetCurrentCommand(userId)!=null)
+                else if (StateMachine.GetCurrentCommand(userId) != null)
                 {
                     await commands.Single(r => r.Name == StateMachine.GetCurrentCommand(userId)).Execute(update, client);
                 }
                 else
                 {
-                    await client.SendTextMessageAsync(update.Message.Chat.Id, $"Команду не розпізнано {new Emoji(0x1F61E)}");
+                    await client.SendTextMessageAsync(update.Message.Chat.Id, $"Команду не розпізнано {new Models.Emoji(0x1F61E)}");
                 }
             }
             if (update.Type == UpdateType.CallbackQuery)
             {
                 var userId = update.CallbackQuery.From.Id;
                 var command = commands.FirstOrDefault(r => r.Name == StateMachine.GetCurrentCommand(userId));
-                if (command!=null)
+                if (command != null)
                 {
-                    await command.Execute(update,client);
+                    await command.Execute(update, client);
                 }
             }
             return Ok();
