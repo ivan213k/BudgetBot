@@ -37,17 +37,17 @@ namespace BudgetBot.Models.DataBase
             {
                 new (1,"Їжа", isStandard: true, CategoryType.Expense, new Emoji(0x1F37D)),
                 new (2,"Одяг", isStandard: true, CategoryType.Expense, new Emoji(0x1F454)),
-                new (3,"Електроніка", isStandard: true, CategoryType.Expense),
-                new (4,"Розваги", isStandard: true, CategoryType.Expense),
-                new (5,"Особистий догляд", isStandard: true, CategoryType.Expense),
-                new (6,"Транспорт", isStandard: true, CategoryType.Expense),
-                new (7,"Подорожі", isStandard: true, CategoryType.Expense),
-                new (8,"Лікування", isStandard: true, CategoryType.Expense),
-                new (9,"Будинок", isStandard: true, CategoryType.Expense),
+                new (3,"Електроніка", isStandard: true, CategoryType.Expense, new Emoji(0x1F50C)),
+                new (4,"Розваги", isStandard: true, CategoryType.Expense, new Emoji(0x1FA82)),
+                new (5,"Особистий догляд", isStandard: true, CategoryType.Expense(0x1F6C0)),
+                new (6,"Транспорт", isStandard: true, CategoryType.Expense, new Emoji(0x1F68C)),
+                new (7,"Подорожі", isStandard: true, CategoryType.Expense, new Emoji(0x1F42B)),
+                new (8,"Лікування", isStandard: true, CategoryType.Expense, new Emoji(0x1F48A)),
+                new (9,"Будинок", isStandard: true, CategoryType.Expense, new Emoji(0x1F3E0)),
 
-                new (10,"Заробітня плата", isStandard: true, CategoryType.Revenue),
-                new (11,"Премія", isStandard: true, CategoryType.Revenue),
-                new (12, "Підробіток", isStandard: true, CategoryType.Revenue)
+                new (10,"Заробітня плата", isStandard: true, CategoryType.Revenue, new Emoji(0x1F4B5)),
+                new (11,"Премія", isStandard: true, CategoryType.Revenue, new Emoji(0x1F4B8)),
+                new (12, "Підробіток", isStandard: true, CategoryType.Revenue, new Emoji(0x1F4B0))
             });
         }
 
